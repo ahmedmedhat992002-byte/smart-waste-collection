@@ -53,7 +53,30 @@
                 </div>
             </div>
         </section>
-        <!-- Features Section -->
+        <!-- Personalized Impact Dashboard (Citizen Only) -->
+    <section id="personalImpact" class="container animate-in" style="display: none; margin-top: -3rem; position: relative; z-index: 10;">
+        <div class="glass-card" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; border-left: 6px solid var(--primary);">
+            <div class="impact-widget">
+                <span style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Current Level</span>
+                <div style="font-size: 1.5rem; font-weight: 800; color: var(--secondary);">ECO-SENTINEL</div>
+            </div>
+            <div class="impact-widget">
+                <span style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Contribution Points</span>
+                <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary);"><i class="fas fa-leaf"></i> <span id="dashPoints">0</span></div>
+            </div>
+            <div class="impact-widget">
+                <span style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Global Ranking</span>
+                <div style="font-size: 1.5rem; font-weight: 800; color: var(--accent);">#412</div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: flex-end;">
+                <a href="rewards.html" class="btn-premium" style="padding: 10px 20px; font-size: 0.85rem;">
+                    <i class="fas fa-gift"></i> Spend Points
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
     <section class="features animate-in">
         <div class="section-badge">Eco-Systems</div>
         <h2 class="text-gradient">How SmartCity Works</h2>
@@ -72,6 +95,37 @@
                 <div class="feature-icon"><i class="fas fa-chart-pie"></i></div>
                 <h3>Real-time Stats</h3>
                 <p>Track city-wide cleanup progress through our transparent, mission-driven analytics dashboard.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Live Activity Feed -->
+    <section class="container animate-in" style="margin: 80px auto;">
+        <div class="section-badge">Live Missions</div>
+        <h2 style="margin-bottom: 2rem;">Real-time <span class="text-gradient">Cleanup Activity</span></h2>
+        <div class="glass-card" style="padding: 0; overflow: hidden;">
+            <div id="liveFeed" style="max-height: 400px; overflow-y: auto;">
+                <!-- Activity Items -->
+                <div style="padding: 1.5rem; border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; gap: 1rem;">
+                    <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(16, 185, 129, 0.2); display: flex; align-items: center; justify-content: center; color: var(--primary);">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 600;">Citizen Sarah reported Plastic Waste</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">2 minutes ago · Downtown District</div>
+                    </div>
+                    <div style="margin-left: auto; color: var(--primary); font-weight: 700;">+10 XP</div>
+                </div>
+                <div style="padding: 1.5rem; border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; gap: 1rem;">
+                    <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; color: #3b82f6;">
+                        <i class="fas fa-truck-pickup"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 600;">Crew Alpha completed Mission #821</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">15 minutes ago · Green Valley</div>
+                    </div>
+                    <div style="margin-left: auto; color: #3b82f6; font-weight: 700;">RESOLVED</div>
+                </div>
             </div>
         </div>
     </section>

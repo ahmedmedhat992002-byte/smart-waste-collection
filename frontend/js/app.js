@@ -4,6 +4,18 @@ const API_URL = 'http://localhost:5000/api';
 function showModal(id) { document.getElementById(id).style.display = 'block'; }
 function hideModal(id) { document.getElementById(id).style.display = 'none'; }
 
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-info-circle'}"></i> ${message}`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 100);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
 async function checkAuth() {
     const token = localStorage.getItem('token');
     const userString = localStorage.getItem('user');
@@ -15,6 +27,16 @@ async function checkAuth() {
         if (document.getElementById('authButtons')) document.getElementById('authButtons').style.display = 'none';
         if (document.getElementById('userInfo')) document.getElementById('userInfo').style.display = 'flex';
         
+        // Dynamic Nav Links
+        const navLinks = document.querySelector('.nav-links');
+        if (navLinks && !document.getElementById('rewardsLink')) {
+            const rewards = document.createElement('a');
+            rewards.id = 'rewardsLink';
+            rewards.href = 'rewards.html';
+            rewards.innerHTML = 'Eco Store';
+            navLinks.appendChild(rewards);
+        }
+
         // Refresh User Stats from Backend
         try {
             const res = await fetch(`${API_URL}/auth/profile/${user.id || user._id}`);
@@ -28,6 +50,14 @@ async function checkAuth() {
         if (document.getElementById('userHandle')) document.getElementById('userHandle').innerText = user.name.split(' ')[0];
         if (document.getElementById('userPoints')) {
             document.getElementById('userPoints').innerHTML = `<i class="fas fa-coins"></i> ${user.ecoPoints || 0}`;
+        }
+
+        // Home Page Personal Impact Dashboard
+        const personalImpact = document.getElementById('personalImpact');
+        if (personalImpact && user.role === 'citizen') {
+            personalImpact.style.display = 'block';
+            const dashPoints = document.getElementById('dashPoints');
+            if (dashPoints) dashPoints.innerText = user.ecoPoints || 0;
         }
     }
 }
