@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report History | SmartWaste</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body onload="fetchMyReports()">
+    <!-- Navbar -->
+    <nav class="navbar glass">
+        <div class="logo">
+            <div class="logo-icon"><i class="fas fa-recycle"></i></div>
+            <span class="logo-text">SmartWaste</span>
+        </div>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="report.html">Report Incident</a>
+            <a href="history.html" class="active">My Activity</a>
+            <a href="tips.html">Eco-Tips</a>
+        </div>
+        <div class="nav-actions">
+            <button class="btn-premium small" onclick="logout()">Logout</button>
+            <button class="mobile-toggle"><i class="fas fa-bars"></i></button>
+        </div>
+    </nav>
+
+    <main class="page-container animate-in">
+        <div class="content-header">
+            <span class="badge-eco">Environmental Impact</span>
+            <h1 class="text-gradient">My Report History</h1>
+            <p>Tracking your contributions to a cleaner, smarter city.</p>
+        </div>
+
+        <div id="historyList" class="history-grid">
+            <!-- History Cards via JS -->
+        </div>
+
+        <div id="emptyState" class="empty-state animate-in" style="display: none;">
+            <div class="empty-icon"><i class="fas fa-leaf"></i></div>
+            <h2>No reports yet</h2>
+            <p>Start your journey towards a sustainable future by reporting your first waste incident.</p>
+            <a href="report.html" class="btn-premium" style="margin-top: 1.5rem;">Report Now</a>
+        </div>
+    </main>
+
+    <style>
+        .page-container { padding: 8rem 10% 5rem; max-width: 1400px; margin: 0 auto; }
+        .content-header { text-align: center; margin-bottom: 4rem; }
+        .content-header h1 { font-size: 3rem; margin: 1rem 0; }
+        
+        .history-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem; }
+        .history-card { display: flex; flex-direction: column; gap: 1.5rem; transition: transform 0.3s; }
+        .history-card:hover { transform: translateY(-5px); }
+
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .report-date { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+        
+        .card-body h3 { font-size: 1.3rem; margin-bottom: 0.75rem; color: var(--text-white); }
+        .card-body p { color: var(--text-dim); font-size: 0.9rem; line-height: 1.6; }
+
+        .report-image { margin-top: 1rem; border-radius: 12px; overflow: hidden; height: 180px; width: 100%; border: 1px solid var(--glass-border); }
+        .report-image img { width: 100%; height: 100%; object-fit: cover; }
+
+        .empty-state { text-align: center; padding: 6rem 2rem; display: flex; flex-direction: column; align-items: center; }
+        .empty-icon { width: 80px; height: 80px; background: rgba(16, 185, 129, 0.1); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 2rem; }
+        
+        .text-gradient { background: var(--grad-eco); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+
+        @media (max-width: 768px) {
+            .page-container { padding-top: 6rem; }
+            .history-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+
+    <script src="js/app.js"></script>
+    <script>
+        async function fetchMyReports() {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (!user.id) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            try {
+                const res = await fetch(`http://localhost:5000/api/my-reports/${user.id}`);
+                const reports = await res.json();
+                const container = document.getElementById('historyList');
+                const emptyState = document.getElementById('emptyState');
+                
+                container.innerHTML = '';
+                if (!reports || reports.length === 0) {
+                    emptyState.style.display = 'flex';
+                    return;
+                } else {
+                    emptyState.style.display = 'none';
+                }
+
+                reports.forEach((report, index) => {
+                    const card = `
+                        <div class="glass-card history-card animate-in" style="animation-delay: ${index * 0.1}s">
+                            <div class="card-header">
+                                <span class="badge ${report.status}">${report.status.toUpperCase()}</span>
+                                <span class="report-date">${new Date(report.createdAt).toLocaleDateString()}</span>
+                            </div>
+                            <div class="card-body">
+                                <h3>${report.category.toUpperCase()}</h3>
+                                <p>${report.description || 'No detailed description provided.'}</p>
+                            </div>
+                            ${report.imageUrl ? `
+                                <div class="report-image">
+                                    <img src="${report.imageUrl}" alt="Waste report image">
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                    container.innerHTML += card;
+                });
+            } catch (err) {
+                console.error('History load error:', err);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Waste | SmartWaste Sustainability</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar glass-card">
+        <div class="nav-container">
+            <a href="index.html" class="logo">
+                <div class="logo-icon"><i class="fas fa-recycle"></i></div>
+                <span>SMARTWASTE</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="report.html" class="active">Report Issue</a>
+                <a href="tips.html">Eco Tips</a>
+                <a href="dashboard.html">Admin</a>
+            </div>
+            <div id="userInfo" class="points-badge">
+                <i class="fas fa-leaf"></i> <span id="userPoints">0</span> pts
+            </div>
+        </div>
+    </nav>
+
+    <main class="container" style="padding: 4rem 5%;">
+        <header style="text-align: center; margin-bottom: 4rem;" class="animate-in">
+            <span class="badge-eco">Action for Cleaner Cities</span>
+            <h1 style="font-size: 3rem; margin-top: 1rem;">New <span class="text-gradient">Incident Report</span></h1>
+            <p style="color: var(--text-muted); max-width: 600px; margin: 1.5rem auto;">Submit waste sightings for immediate municipal response. Your contribution helps us optimize city cleanup efforts.</p>
+        </header>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem;">
+            <div class="glass-card animate-in">
+                <form id="reportForm">
+                    <div class="form-group">
+                        <label>Waste Category</label>
+                        <select id="category" required>
+                            <option value="plastic">Plastic Contamination</option>
+                            <option value="paper">Paper & Cardboard</option>
+                            <option value="metal">Scrap Metal</option>
+                            <option value="mixed">Mixed/General Waste</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="description" rows="4" style="width:100%; padding:12px; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:12px; color:white; outline:none;" placeholder="Provide details for the collection crew..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Visual Evidence</label>
+                        <div id="imagePreview" style="width: 100%; height: 200px; border: 2px dashed var(--glass-border); border-radius: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s;" onclick="document.getElementById('imageInput').click()">
+                            <i class="fas fa-cloud-arrow-up fa-2x" style="color: var(--primary); margin-bottom: 1rem;"></i>
+                            <span style="color: var(--text-muted);">Click to upload or capture photo</span>
+                        </div>
+                        <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                    </div>
+
+                    <div style="margin-bottom: 2rem;">
+                        <button type="button" id="getLocation" class="btn-premium secondary w-full">
+                            <i class="fas fa-location-crosshairs"></i> Detect Incident Geolocation
+                        </button>
+                        <p id="locationStatus" style="font-size: 0.8rem; text-align: center; margin-top: 8px; color: var(--primary);"></p>
+                    </div>
+
+                    <button type="submit" class="btn-premium w-full" style="padding: 18px;">Transmit Live Report</button>
+                </form>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 2rem;">
+                <div class="glass-card animate-in" style="padding: 0; overflow: hidden; height: 350px; animation-delay: 0.2s;">
+                    <div id="map" style="height: 100%; background: rgba(255,255,255,0.02); display: flex; align-items: center; justify-content: center; color: var(--text-dim);">
+                        <span><i class="fas fa-map-marked-alt"></i> Interactive Map Loading...</span>
+                    </div>
+                </div>
+                <div class="glass-card animate-in" style="animation-delay: 0.3s; border-left: 4px solid var(--primary);">
+                    <h3 style="margin-bottom: 1rem;"><i class="fas fa-shield-halved" style="color: var(--primary);"></i> Submission Protocol</h3>
+                    <ul style="color: var(--text-muted); list-style: none; font-size: 0.95rem; display: flex; flex-direction: column; gap: 12px;">
+                        <li style="display: flex; gap: 10px;"><i class="fas fa-check-circle" style="color: var(--primary);"></i> Real-time encrypted data transmission.</li>
+                        <li style="display: flex; gap: 10px;"><i class="fas fa-check-circle" style="color: var(--primary);"></i> Automatic crew dispatch algorithm trigger.</li>
+                        <li style="display: flex; gap: 10px;"><i class="fas fa-check-circle" style="color: var(--primary);"></i> Immediate Eco-Reward point allocation.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <style>
+        .navbar { margin: 20px auto; max-width: 1200px; width: 90%; position: sticky; top: 20px; z-index: 1000; padding: 0.8rem 2rem; }
+        .nav-container { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text-white); font-weight: 800; }
+        .logo-icon { width: 36px; height: 36px; background: var(--grad-eco); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .nav-links { display: flex; gap: 2rem; }
+        .nav-links a { text-decoration: none; color: var(--text-muted); font-weight: 500; transition: color 0.3s; }
+        .nav-links a:hover, .nav-links a.active { color: var(--primary); }
+        .text-gradient { background: var(--grad-eco); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .badge-eco { display: inline-block; padding: 4px 16px; background: rgba(16, 185, 129, 0.1); color: var(--primary); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted); }
+        .form-group select { width: 100%; padding: 12px 16px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); border-radius: 12px; color: white; outline: none; transition: border-color 0.3s; }
+        .form-group select:focus { border-color: var(--primary); }
+        .w-full { width: 100%; }
+        .points-badge { background: rgba(132, 204, 22, 0.1); color: var(--secondary); border: 1px solid rgba(132, 204, 22, 0.2); padding: 8px 16px; border-radius: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+
+        @media (max-width: 1024px) {
+            main > div { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .navbar { padding: 0.8rem 1rem; }
+        }
+    </style>
+    <script src="js/app.js"></script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initReportMap"></script>
+    <script src="js/map.js"></script>
+</body>
+</html>
