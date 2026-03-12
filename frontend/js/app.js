@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5000/api';
+const API_URL = '/api';
 
 // --- Shared Utility ---
 function showModal(id) { document.getElementById(id).style.display = 'block'; }
