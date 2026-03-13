@@ -218,8 +218,8 @@ const getMyReports = async (req, res) => {
         res.json(reports);
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
-router.get('/my-reports',         getMyReports);
-router.get('/my-reports/:userId', getMyReports);
+router.get('/my-reports',         protect, getMyReports);
+router.get('/my-reports/:userId', protect, getMyReports);
 
 // ─── ADMIN ────────────────────────────────────────────────────────────────────
 

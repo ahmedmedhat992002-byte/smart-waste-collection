@@ -154,7 +154,10 @@
             }
 
             try {
-                const res = await fetch(`http://localhost:5000/api/driver/tasks/${user.id}`);
+                // Use fetchWithAuth for secure API calls
+                const res = await fetchWithAuth(`${API_URL}/driver/tasks/${user.id || user._id}`);
+                if (!res || !res.ok) return;
+                
                 const tasks = await res.json();
                 const container = document.getElementById('taskList');
                 const emptyState = document.getElementById('emptyState');
@@ -210,6 +213,7 @@
                 });
             } catch (err) {
                 console.error('Task sync error:', err);
+                showToast('Mission queue sync failed.', 'error');
             }
         }
 
@@ -224,19 +228,19 @@
             const notes = document.getElementById('collectionNotes').value;
 
             try {
-                const res = await fetch('http://localhost:5000/api/driver/complete-collection', {
+                const res = await fetchWithAuth(`${API_URL}/driver/complete-collection`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ reportId, weight, notes })
                 });
 
-                if (res.ok) {
+                if (res && res.ok) {
                     hideModal('completeModal');
+                    showToast('Mission secured! Well done.', 'success');
                     initDriverPage();
-                    // Custom notification could be added here
                 }
             } catch (err) {
                 console.error('Completion error:', err);
+                showToast('Failed to log completion.', 'error');
             }
         }
     </script>

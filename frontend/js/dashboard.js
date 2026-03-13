@@ -14,7 +14,8 @@ async function initAdminDashboard() {
 }
 
 async function fetchStats() {
-    const res = await fetch('/api/admin/stats');
+    const res = await fetchWithAuth(`${API_URL}/admin/stats`);
+    if (!res || !res.ok) return;
     const data = await res.json();
     
     // Update Counter Widgets
@@ -150,7 +151,8 @@ function renderPerformanceChart(percent) {
 }
 
 async function fetchDrivers() {
-    const res = await fetch('/api/admin/drivers');
+    const res = await fetchWithAuth(`${API_URL}/admin/drivers`);
+    if (!res || !res.ok) return;
     const drivers = await res.json();
     const select = document.getElementById('driverSelect');
     if (select) {
@@ -172,13 +174,12 @@ async function confirmAssignment() {
 
     if (!driverId) return showToast('Please select a dispatch unit.', 'error');
 
-    const res = await fetch('/api/admin/assign-task', {
+    const res = await fetchWithAuth(`${API_URL}/admin/assign-task`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reportId, driverId })
     });
     
-    if (res.ok) {
+    if (res && res.ok) {
         hideModal('assignModal');
         showToast('Unit dispatched successfully!', 'success');
         fetchStats();

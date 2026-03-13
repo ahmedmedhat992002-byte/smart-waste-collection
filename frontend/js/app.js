@@ -16,6 +16,35 @@ function showToast(message, type = 'info') {
     }, 4000);
 }
 
+// Helper for Authenticated API Calls
+async function fetchWithAuth(url, options = {}) {
+    const token = localStorage.getItem('token');
+    const headers = {
+        'Content-Type': 'application/json',
+        ...(options.headers || {})
+    };
+    
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    // If body is FormData, don't set Content-Type (browser will set it with boundary)
+    if (options.body instanceof FormData) {
+        delete headers['Content-Type'];
+    }
+
+    const response = await fetch(url, { ...options, headers });
+    
+    if (response.status === 401) {
+        // Token expired or invalid
+        localStorage.clear();
+        window.location.href = 'index.html';
+        return;
+    }
+    
+    return response;
+}
+
 async function checkAuth() {
     const token = localStorage.getItem('token');
     const userString = localStorage.getItem('user');
@@ -39,8 +68,8 @@ async function checkAuth() {
 
         // Refresh User Stats from Backend
         try {
-            const res = await fetch(`${API_URL}/auth/profile/${user.id || user._id}`);
-            if (res.ok) {
+            const res = await fetchWithAuth(`${API_URL}/auth/profile/${user.id || user._id}`);
+            if (res && res.ok) {
                 const freshUser = await res.json();
                 user = { ...user, ...freshUser };
                 localStorage.setItem('user', JSON.stringify(user));
@@ -179,17 +208,24 @@ if (reportForm) {
         if (imgInput.files[0]) formData.append('images', imgInput.files[0]);
 
         toggleLoading(true);
-        const res = await fetch(`${API_URL}/citizen/report`, {
-            method: 'POST',
-            body: formData
-        });
-        const data = await res.json();
-        toggleLoading(false);
-        if (data._id) {
-            showToast('Report Transmitted! Eco-points earned 🌱', 'success');
-            setTimeout(() => window.location.href = 'index.html', 2000);
-        } else {
-            showToast(data.error || 'Report failed. Please try again.', 'error');
+        try {
+            const res = await fetchWithAuth(`${API_URL}/citizen/report`, {
+                method: 'POST',
+                body: formData
+            });
+            if (!res) return; // fetchWithAuth might have redirected
+            
+            const data = await res.json();
+            toggleLoading(false);
+            if (data._id) {
+                showToast('Report Transmitted! Eco-points earned 🌱', 'success');
+                setTimeout(() => window.location.href = 'index.html', 2000);
+            } else {
+                showToast(data.error || 'Report failed. Please try again.', 'error');
+            }
+        } catch (err) {
+            toggleLoading(false);
+            showToast('Submission failed. Check your connection.', 'error');
         }
     };
 }

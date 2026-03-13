@@ -84,7 +84,8 @@
             }
 
             try {
-                const res = await fetch(`/api/my-reports/${user.id}`);
+                const res = await fetchWithAuth(`${API_URL}/my-reports/${user.id || user._id}`);
+                if (!res || !res.ok) return;
                 const reports = await res.json();
                 const container = document.getElementById('historyList');
                 const emptyState = document.getElementById('emptyState');
