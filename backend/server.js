@@ -1,52 +1,47 @@
 const express  = require('express');
+const mongoose = require('mongoose');
 const cors     = require('cors');
 const path     = require('path');
 const fs       = require('fs');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
-const connectDB = require('./config/database');
-const apiRoutes = require('./routes');
-
-// ─── Connect to MongoDB ───────────────────────────────────────────────────────
-connectDB();
-
-// ─── App ──────────────────────────────────────────────────────────────────────
 const app  = express();
 const PORT = process.env.PORT || 5000;
 
+// ─── Connect to MongoDB ───────────────────────────────────────────────────────
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/smart_waste_db';
+
+if (mongoose.connection.readyState === 0) {
+    mongoose.connect(MONGO_URI)
+        .then(() => console.log('✅ MongoDB Connected'))
+        .catch(err => console.error('❌ MongoDB Error:', err.message));
+}
+
 // ─── Middleware ───────────────────────────────────────────────────────────────
-app.use(cors({
-    origin: process.env.CORS_ORIGIN || '*',
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(cors({ origin: '*', methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'], allowedHeaders: ['Content-Type','Authorization'] }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// ─── Uploads folder (create if missing) ──────────────────────────────────────
-const uploadsDir = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+// ─── Uploads ─────────────────────────────────────────────────────────────────
+const uploadsDir = path.join(process.cwd(), 'uploads');
+try { if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true }); } catch (e) {}
 app.use('/uploads', express.static(uploadsDir));
 
 // ─── API Routes ───────────────────────────────────────────────────────────────
-app.use('/api', apiRoutes);
+app.use('/api', require('./routes'));
 
-// ─── Serve Frontend (Vercel handles this separately, but helps local dev) ─────
+// ─── Serve Frontend ───────────────────────────────────────────────────────────
 const frontendDir = path.join(__dirname, '../frontend');
-if (fs.existsSync(frontendDir)) {
-    app.use(express.static(frontendDir));
-    app.get('*', (req, res) => {
-        if (!req.path.startsWith('/api') && !req.path.startsWith('/uploads')) {
-            res.sendFile(path.join(frontendDir, 'index.html'));
-        }
-    });
-}
-
-// ─── Health check ─────────────────────────────────────────────────────────────
-app.get('/health', (req, res) => res.json({ status: 'OK', timestamp: new Date() }));
-
-// ─── 404 handler ─────────────────────────────────────────────────────────────
-app.use((req, res) => res.status(404).json({ error: 'Route not found' }));
+try {
+    if (fs.existsSync(frontendDir)) {
+        app.use(express.static(frontendDir));
+        app.get('*', (req, res) => {
+            if (!req.path.startsWith('/api') && !req.path.startsWith('/uploads')) {
+                res.sendFile(path.join(frontendDir, 'index.html'));
+            }
+        });
+    }
+} catch (e) {}
 
 // ─── Error handler ────────────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
@@ -54,12 +49,9 @@ app.use((err, req, res, next) => {
     res.status(err.status || 500).json({ error: err.message || 'Internal server error' });
 });
 
-// ─── Start (local dev) / Export (Vercel serverless) ──────────────────────────
+// ─── Local dev / Vercel export ────────────────────────────────────────────────
 if (require.main === module) {
-    app.listen(PORT, () => {
-        console.log(`🚀 SmartWaste Backend  →  http://localhost:${PORT}`);
-        console.log(`📦 Env: ${process.env.NODE_ENV || 'development'}`);
-    });
+    app.listen(PORT, () => console.log(`🚀 SmartWaste → http://localhost:${PORT}`));
 }
 
 module.exports = app;
