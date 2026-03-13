@@ -19,10 +19,10 @@
             </div>
             
             <nav class="sidebar-nav">
-                <a href="dashboard.html" class="nav-item active"><i class="fas fa-chart-line"></i> <span>Overview</span></a>
-                <a href="#" class="nav-item"><i class="fas fa-map-location-dot"></i> <span>Live Map</span></a>
-                <a href="#" class="nav-item"><i class="fas fa-truck-fast"></i> <span>Fleet Status</span></a>
-                <a href="#" class="nav-item"><i class="fas fa-users-gear"></i> <span>Manage Users</span></a>
+                <a href="#" class="nav-item active" onclick="switchTab('overview', this)"><i class="fas fa-chart-line"></i> <span>Overview</span></a>
+                <a href="#" class="nav-item" onclick="switchTab('map', this)"><i class="fas fa-map-location-dot"></i> <span>Live Map</span></a>
+                <a href="#" class="nav-item" onclick="switchTab('fleet', this)"><i class="fas fa-truck-fast"></i> <span>Fleet Status</span></a>
+                <a href="#" class="nav-item" onclick="switchTab('users', this)"><i class="fas fa-users-gear"></i> <span>Manage Users</span></a>
             </nav>
 
             <div class="sidebar-footer">
@@ -49,7 +49,9 @@
                 </div>
             </header>
 
-            <div class="stats-grid">
+            <!-- OVERVIEW TAB -->
+            <div id="overview-tab" class="tab-content active" style="display: block;">
+                <div class="stats-grid">
                 <div class="glass-card stat-item animate-in">
                     <div class="stat-header">
                         <span class="stat-label">TOTAL REPORTS</span>
@@ -84,7 +86,7 @@
                             <span class="status-indicator live">LIVE</span>
                         </div>
                     </div>
-                    <div id="adminMap" class="map-container"></div>
+                    <div id="adminMapSmall" class="map-container"></div>
                 </div>
 
                 <div class="glass-card chart-container animate-in" style="animation-delay: 0.4s;">
@@ -147,6 +149,71 @@
                             <!-- JS Inject -->
                         </tbody>
                     </table>
+                </div>
+            </div>
+            </div> <!-- End Overview Tab -->
+
+            <!-- LIVE MAP TAB -->
+            <div id="map-tab" class="tab-content" style="display: none;">
+                <div class="glass-card animate-in" style="height: 75vh; padding: 1rem;">
+                    <div id="adminMapLarge" style="width: 100%; height: 100%; border-radius: 15px; background: rgba(255,255,255,0.02); display: flex; align-items: center; justify-content: center;">
+                        <span><i class="fas fa-map-marked-alt"></i> Large Map Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FLEET STATUS TAB -->
+            <div id="fleet-tab" class="tab-content" style="display: none;">
+                <div class="glass-card reports-table-container animate-in">
+                    <div class="table-header">
+                        <h2>Fleet Real-Time Status</h2>
+                        <button class="btn-premium" onclick="fetchFleetStatus()"><i class="fas fa-sync-alt"></i> Refresh</button>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>DRIVER NAME</th>
+                                    <th>EMAIL</th>
+                                    <th>ECO POINTS</th>
+                                    <th>STATUS</th>
+                                    <th>ACTIVE MISSION</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fleetTable">
+                                <!-- JS Inject -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MANAGE USERS TAB -->
+            <div id="users-tab" class="tab-content" style="display: none;">
+                <div class="glass-card reports-table-container animate-in">
+                    <div class="table-header">
+                        <h2>User Management</h2>
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="userSearch" placeholder="Search users by name/email..." onkeyup="filterUsers()">
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>NAME</th>
+                                    <th>EMAIL</th>
+                                    <th>ROLE</th>
+                                    <th>ECO POINTS</th>
+                                    <th>JOINED</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTable">
+                                <!-- JS Inject -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </main>

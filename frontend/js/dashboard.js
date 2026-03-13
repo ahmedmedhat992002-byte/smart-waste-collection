@@ -185,3 +185,106 @@ async function confirmAssignment() {
         fetchStats();
     }
 }
+
+// --- Tab & New Features Logic ---
+function switchTab(tabId, element) {
+    document.querySelectorAll('.sidebar-nav .nav-item').forEach(el => el.classList.remove('active'));
+    element.classList.add('active');
+
+    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+    document.getElementById(`${tabId}-tab`).style.display = 'block';
+
+    if (tabId === 'fleet') fetchFleetStatus();
+    if (tabId === 'users') fetchAllUsers();
+    
+    // Trigger map resize if switching to map tab (Leaflet workaround)
+    if (tabId === 'map' && typeof window.dispatchEvent === 'function') {
+        setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
+    }
+}
+
+async function fetchFleetStatus() {
+    const res = await fetchWithAuth(`${API_URL}/admin/drivers`);
+    if (!res || !res.ok) return;
+    const drivers = await res.json();
+    const tbody = document.getElementById('fleetTable');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (drivers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No drivers found in the system.</td></tr>';
+        return;
+    }
+
+    drivers.forEach(d => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><i class="fas fa-truck" style="color:var(--primary); margin-right:8px;"></i> ${d.name}</td>
+            <td>${d.email}</td>
+            <td><strong>${d.ecoPoints || 0}</strong></td>
+            <td><span class="badge ${d.status === 'Idle' ? 'collected' : 'pending'}">${d.status || 'Active'}</span></td>
+            <td>${d.activeMission ? `<span style="font-family:monospace; color:var(--accent);">#${d.activeMission.substr(-6)}</span>` : 'None'}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+async function fetchAllUsers() {
+    const res = await fetchWithAuth(`${API_URL}/admin/users`);
+    if (!res || !res.ok) return;
+    window.allUsersCache = await res.json();
+    renderUsers(window.allUsersCache);
+}
+
+function renderUsers(users) {
+    const tbody = document.getElementById('usersTable');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    users.forEach(u => {
+        const roleOptions = ['citizen', 'driver', 'admin']
+            .map(r => `<option value="${r}" ${u.role === r ? 'selected' : ''}>${r.toUpperCase()}</option>`)
+            .join('');
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><div style="font-weight:600;">${u.name}</div></td>
+            <td>${u.email}</td>
+            <td>
+                <select class="role-select" style="background:rgba(255,255,255,0.05); color:white; border:1px solid var(--glass-border); padding:4px 8px; border-radius:6px; outline:none;" onchange="changeUserRole('${u._id}', this.value)">
+                    ${roleOptions}
+                </select>
+            </td>
+            <td style="color:var(--primary); font-weight:700;">${u.ecoPoints || 0}</td>
+            <td style="font-size:0.85rem; color:var(--text-muted);">${new Date(u.createdAt).toLocaleDateString()}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+async function changeUserRole(userId, newRole) {
+    const res = await fetchWithAuth(`${API_URL}/admin/users/${userId}/role`, {
+        method: 'PUT',
+        body: JSON.stringify({ role: newRole })
+    });
+    
+    if (res && res.ok) {
+        showToast('User permissions updated successfully', 'success');
+    } else {
+        showToast('Failed to update user role', 'error');
+        fetchAllUsers(); // revert changes visually
+    }
+}
+
+function filterUsers() {
+    const q = document.getElementById('userSearch').value.toLowerCase();
+    if (!window.allUsersCache) return;
+    if (!q) return renderUsers(window.allUsersCache);
+    
+    const filtered = window.allUsersCache.filter(u => 
+        u.name.toLowerCase().includes(q) || 
+        u.email.toLowerCase().includes(q)
+    );
+    renderUsers(filtered);
+}
+

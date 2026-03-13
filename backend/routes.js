@@ -261,8 +261,40 @@ router.get('/admin/stats', protect, authorize('admin'), async (req, res) => {
 // GET /api/admin/drivers
 router.get('/admin/drivers', protect, authorize('admin'), async (req, res) => {
     try {
-        const drivers = await User.find({ role: 'driver' }).select('name email ecoPoints');
-        res.json(drivers);
+        const drivers = await User.find({ role: 'driver' }).select('name email ecoPoints stats');
+        
+        // Fetch current assigned tasks for drivers to enrich data
+        const driversList = [];
+        for (let d of drivers) {
+            const activeReport = await Report.findOne({ assignedDriver: d._id, status: { $in: ['assigned', 'in-transit'] } });
+            driversList.push({
+                ...d.toObject(),
+                status: activeReport ? 'On Mission' : 'Idle',
+                activeMission: activeReport ? activeReport._id : null
+            });
+        }
+        res.json(driversList);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/admin/users
+router.get('/admin/users', protect, authorize('admin'), async (req, res) => {
+    try {
+        const users = await User.find().select('-password').sort({ createdAt: -1 });
+        res.json(users);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PUT /api/admin/users/:id/role
+router.put('/admin/users/:id/role', protect, authorize('admin'), async (req, res) => {
+    try {
+        const { role } = req.body;
+        if (!['citizen', 'driver', 'admin'].includes(role)) {
+            return res.status(400).json({ error: 'Invalid role' });
+        }
+        const user = await User.findByIdAndUpdate(req.params.id, { role }, { new: true }).select('-password');
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        res.json({ message: 'User role updated', user });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
