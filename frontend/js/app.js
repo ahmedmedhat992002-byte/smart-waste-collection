@@ -4,6 +4,13 @@ const API_URL = '/api';
 function showModal(id) { document.getElementById(id).style.display = 'block'; }
 function hideModal(id) { document.getElementById(id).style.display = 'none'; }
 
+function toggleMenu() {
+    const nav = document.getElementById('navLinks');
+    const auth = document.getElementById('authSection') || document.querySelector('.nav-auth');
+    if (nav) nav.classList.toggle('active');
+    if (auth && window.innerWidth <= 768) auth.classList.toggle('active');
+}
+
 // --- Theme Toggle ---
 function toggleTheme() {
     const isLight = document.body.classList.toggle('light-mode');

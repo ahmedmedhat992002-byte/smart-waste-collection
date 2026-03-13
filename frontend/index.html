@@ -334,7 +334,7 @@
 
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
             gap: 2rem;
             padding-bottom: 8rem;
         }
@@ -372,6 +372,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 1rem;
         }
 
         .modal-content {
@@ -473,28 +474,6 @@
 
         @media (max-width: 768px) {
             .hero h1 { font-size: 2.8rem; }
-            .navbar { padding: 0.8rem 1rem; }
-            .nav-auth { display: none; }
-        }
-        /* Mobile Nav Refinements */
-        .mobile-toggle { display: none; background: none; border: none; color: var(--text-white); font-size: 1.5rem; cursor: pointer; }
-
-        @media (max-width: 900px) {
-            .mobile-toggle { display: block; }
-            .nav-links {
-                display: none;
-                position: absolute;
-                top: 100%;
-                left: 0;
-                right: 0;
-                background: rgba(15, 23, 42, 0.95);
-                backdrop-filter: blur(20px);
-                flex-direction: column;
-                padding: 2rem;
-                gap: 1.5rem;
-                border-bottom: 1px solid var(--glass-border);
-            }
-            .nav-links.active { display: flex; }
         }
 
         /* Loading Spinner */
@@ -521,11 +500,6 @@
 
     <script src="js/app.js"></script>
     <script>
-        function toggleMenu() {
-            const nav = document.getElementById('navLinks');
-            nav.classList.toggle('active');
-        }
-
         // Show 'My Activity' link if user is logged in
         const storedUser = localStorage.getItem('user');
         if (storedUser) {

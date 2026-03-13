@@ -176,7 +176,7 @@ body {
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
     gap: 25px;
     margin-bottom: 30px;
 }
@@ -243,9 +243,15 @@ body {
 }
 
 /* Data Table Styling */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
 table {
     width: 100%;
     border-collapse: collapse;
+    min-width: 600px; /* Ensures tables don't squish too much */
 }
 
 th {
@@ -364,6 +370,58 @@ td {
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
+}
+
+/* ── Mobile Navigation ─────────────────────────────── */
+.mobile-toggle { 
+    display: none; 
+    background: none; 
+    border: none; 
+    color: var(--text-white); 
+    font-size: 1.5rem; 
+    cursor: pointer; 
+}
+body.light-mode .mobile-toggle {
+    color: var(--text-muted);
+}
+
+@media (max-width: 900px) {
+    .mobile-toggle { display: block; }
+    .nav-links {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: rgba(15, 23, 42, 0.95);
+        backdrop-filter: blur(20px);
+        flex-direction: column;
+        padding: 2rem;
+        gap: 1.5rem;
+        border-bottom: 1px solid var(--glass-border);
+    }
+    body.light-mode .nav-links {
+        background: rgba(255, 255, 255, 0.95);
+    }
+    .nav-links.active { display: flex; }
+}
+
+@media (max-width: 768px) {
+    .navbar { padding: 0.8rem 1rem; width: 95%; margin: 10px auto; }
+    .logo span { display: none; } /* Hide text on very small screens, show icon only */
+    /* On mobile we want auth section to hide if it's too cramped, or stack it */
+    .nav-auth { display: none; }
+    .nav-auth.active {
+        display: flex;
+        position: absolute;
+        top: 100%;
+        left: 0; right: 0;
+        background: rgba(15, 23, 42, 0.95);
+        padding: 1rem;
+        justify-content: center;
+        border-bottom: 1px solid var(--glass-border);
+        margin-top: 1px;
+    }
 }
 
 /* Leaflet Dark Theme Overrides */
