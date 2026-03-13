@@ -126,7 +126,12 @@ function renderTrendChart(dailyReports) {
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+                y: { 
+                    suggestedMin: 0, 
+                    suggestedMax: 10, 
+                    grid: { color: 'rgba(255,255,255,0.05)' }, 
+                    ticks: { color: '#94a3b8', stepSize: 1 } 
+                },
                 x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
             }
         }
@@ -147,7 +152,7 @@ function renderPerformanceChart(percent) {
             labels: ['Collected', 'Pending'],
             datasets: [{
                 data: [percent, 100 - percent],
-                backgroundColor: ['#10b981', 'rgba(255,255,255,0.05)'],
+                backgroundColor: ['#10b981', 'rgba(255,255,255,0.15)'],
                 borderWidth: 0
             }]
         },
