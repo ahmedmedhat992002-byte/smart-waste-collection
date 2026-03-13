@@ -232,6 +232,34 @@ const getMyReports = async (req, res) => {
 router.get('/my-reports',         protect, getMyReports);
 router.get('/my-reports/:userId', protect, getMyReports);
 
+// ─── PUBLIC STATS ─────────────────────────────────────────────────────────────
+
+// GET /api/public/stats
+router.get('/public/stats', async (req, res) => {
+    try {
+        const totalUsers = await User.countDocuments();
+        const totalReports = await Report.countDocuments();
+        const collectedReports = await Report.countDocuments({ status: 'collected' });
+
+        // Calculate dynamic values
+        // Estimate 25kg average per collected report to get "Tonnes" (just a placeholder math logic)
+        const wasteCollectedTonnes = (collectedReports * 25) / 1000; 
+        
+        let recyclingEfficiency = 0;
+        if (totalReports > 0) {
+            recyclingEfficiency = Math.round((collectedReports / totalReports) * 100);
+        }
+
+        res.json({
+            wasteCollected: wasteCollectedTonnes.toFixed(1) + 't',
+            activeCitizens: (totalUsers > 1000) ? (totalUsers / 1000).toFixed(1) + 'k' : totalUsers.toString(),
+            recyclingEfficiency: recyclingEfficiency + '%'
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ─── ADMIN ────────────────────────────────────────────────────────────────────
 
 // GET /api/admin/reports

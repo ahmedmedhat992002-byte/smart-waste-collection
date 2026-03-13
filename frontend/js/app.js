@@ -247,15 +247,62 @@ if (reportForm) {
 
 // --- Mobile Navigation ---
 const mobileToggle = document.querySelector('.mobile-toggle');
-const navLinks = document.querySelector('.nav-links');
-
-if (mobileToggle) {
+const navLinksContainer = document.querySelector('.nav-links');
+if (mobileToggle && navLinksContainer) {
     mobileToggle.addEventListener('click', () => {
-        navLinks.classList.toggle('active');
+        navLinksContainer.classList.toggle('active');
         mobileToggle.querySelector('i').classList.toggle('fa-bars');
         mobileToggle.querySelector('i').classList.toggle('fa-times');
     });
 }
+
+// --- Public Stats (Homepage) ---
+async function loadPublicStats() {
+    const weightEl = document.getElementById('impactWeight');
+    const citizensEl = document.getElementById('impactCitizens');
+    const efficiencyEl = document.getElementById('impactEfficiency');
+
+    if (!weightEl || !citizensEl || !efficiencyEl) return;
+
+    try {
+        const res = await fetch(`${API_URL}/public/stats`);
+        if (res.ok) {
+            const data = await res.json();
+            
+            // Basic animation
+            animateValue(weightEl, 0, parseFloat(data.wasteCollected), 1500, 't');
+            animateValue(citizensEl, 0, parseFloat(data.activeCitizens), 1500, data.activeCitizens.includes('k') ? 'k' : '');
+            animateValue(efficiencyEl, 0, parseInt(data.recyclingEfficiency), 1500, '%');
+        }
+    } catch (err) {
+        console.error("Could not load public stats", err);
+    }
+}
+
+function animateValue(obj, start, end, duration, suffix = '') {
+    if (isNaN(end)) {
+        obj.innerHTML = end + suffix; // Fallback if parsing failed
+        return;
+    }
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        
+        // Use precision based on the end value
+        const currentVal = progress * (end - start) + start;
+        const displayVal = Number.isInteger(end) ? Math.floor(currentVal) : currentVal.toFixed(1);
+        
+        obj.innerHTML = displayVal + suffix;
+        if (progress < 1) {
+            window.requestAnimationFrame(step);
+        }
+    };
+    window.requestAnimationFrame(step);
+}
+
+// Auto-load stats if we're on a page with these elements
+document.addEventListener('DOMContentLoaded', loadPublicStats);
 
 // Close modals on overlay click
 window.onclick = (event) => {
