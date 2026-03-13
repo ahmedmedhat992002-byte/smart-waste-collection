@@ -48,13 +48,24 @@ const ecoPointSchema = new mongoose.Schema({
     amount:          { type: Number, required: true },
     transactionType: { type: String, enum: ['earn','redeem'], default: 'earn' },
     reason:          { type: String, required: true },
-    reportId:        { type: mongoose.Schema.Types.ObjectId, ref: 'WasteReport', default: null }
+    reportId:        { type: mongoose.Schema.Types.ObjectId, ref: 'Report', default: null }
+}, { timestamps: true });
+
+// FuelLog
+const fuelLogSchema = new mongoose.Schema({
+    driverId:      { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    liters:        { type: Number, required: true },
+    cost:          { type: Number, required: true },
+    odometer:      { type: Number, required: true },
+    receiptImage:  { type: String },
+    notes:         { type: String, default: '' }
 }, { timestamps: true });
 
 // Register models safely (avoid OverwriteModelError on hot-reload)
 const User     = mongoose.models.User     || mongoose.model('User', userSchema);
-const Report   = mongoose.models.WasteReport || mongoose.model('WasteReport', reportSchema);
+const Report   = mongoose.models.Report || mongoose.model('Report', reportSchema);
 const EcoPoint = mongoose.models.EcoPoint || mongoose.model('EcoPoint', ecoPointSchema);
+const FuelLog  = mongoose.models.FuelLog || mongoose.model('FuelLog', fuelLogSchema);
 
 // ─── Multer ───────────────────────────────────────────────────────────────────
 const uploadDir = path.join(process.cwd(), 'uploads');
@@ -311,16 +322,54 @@ const assignDriver = async (req, res) => {
 router.post('/admin/assign-driver', protect, authorize('admin'), assignDriver);
 router.post('/admin/assign-task',   protect, authorize('admin'), assignDriver);
 
-// ─── DRIVER ───────────────────────────────────────────────────────────────────
+// ─── DRIVER OPERATIONS ──────────────────────────────────────────────────────────
 
 // GET /api/driver/tasks/:driverId
-router.get('/driver/tasks/:driverId', protect, authorize('driver'), async (req, res) => {
+router.get('/driver/tasks/:driverId', protect, authorize('driver', 'admin'), async (req, res) => {
     try {
         const tasks = await Report.find({
             assignedDriver: req.params.driverId,
             status: { $in: ['assigned', 'in-transit'] }
         }).sort({ createdAt: 1 });
         res.json(tasks);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/driver/route-plan
+router.get('/driver/route-plan', protect, authorize('driver'), async (req, res) => {
+    try {
+        const tasks = await Report.find({
+            assignedDriver: req.user._id,
+            status: { $in: ['assigned', 'in-transit'] }
+        }).sort({ createdAt: 1 });
+        // In a real app, this would integrate with a routing API like Mapbox or Google Directions
+        res.json({ optimizeRoute: true, tasks });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/driver/fuel-log
+router.post('/driver/fuel-log', protect, authorize('driver'), upload.single('receipt'), async (req, res) => {
+    try {
+        const { liters, cost, odometer, notes } = req.body;
+        const receiptImage = req.file ? `/uploads/${req.file.filename}` : null;
+        
+        const log = await FuelLog.create({
+            driverId: req.user._id,
+            liters: parseFloat(liters),
+            cost: parseFloat(cost),
+            odometer: parseInt(odometer),
+            notes: notes || '',
+            receiptImage
+        });
+        res.status(201).json(log);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/driver/fuel-log
+router.get('/driver/fuel-log', protect, authorize('driver'), async (req, res) => {
+    try {
+        const logs = await FuelLog.find({ driverId: req.user._id }).sort({ createdAt: -1 });
+        res.json(logs);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

@@ -18,9 +18,9 @@
             </div>
             
             <nav class="sidebar-nav">
-                <a href="driver.html" class="nav-item active"><i class="fas fa-tasks"></i> <span>Mission List</span></a>
-                <a href="#" class="nav-item"><i class="fas fa-route"></i> <span>Route Plan</span></a>
-                <a href="#" class="nav-item"><i class="fas fa-gas-pump"></i> <span>Fuel Log</span></a>
+                <a href="#" class="nav-item active" data-tab="missions" onclick="switchDriverTab('missions', this)"><i class="fas fa-tasks"></i> <span>Mission List</span></a>
+                <a href="#" class="nav-item" data-tab="route" onclick="switchDriverTab('route', this)"><i class="fas fa-route"></i> <span>Route Plan</span></a>
+                <a href="#" class="nav-item" data-tab="fuel" onclick="switchDriverTab('fuel', this)"><i class="fas fa-gas-pump"></i> <span>Fuel Log</span></a>
             </nav>
 
             <div class="sidebar-footer">
@@ -43,14 +43,89 @@
                 </div>
             </header>
 
-            <div id="taskList" class="mission-grid">
-                <!-- Mission Cards via JS -->
+            <!-- MISSIONS TAB -->
+            <div id="missions-tab" class="tab-content active" style="display: block;">
+                <div id="taskList" class="mission-grid">
+                    <!-- Mission Cards via JS -->
+                </div>
+
+                <div id="emptyState" class="empty-state animate-in" style="display: none;">
+                    <div class="empty-icon"><i class="fas fa-circle-check"></i></div>
+                    <h2>All Clear!</h2>
+                    <p>Your sector is currently clean. Await further dispatch instructions from municipal control.</p>
+                </div>
             </div>
 
-            <div id="emptyState" class="empty-state animate-in" style="display: none;">
-                <div class="empty-icon"><i class="fas fa-circle-check"></i></div>
-                <h2>All Clear!</h2>
-                <p>Your sector is currently clean. Await further dispatch instructions from municipal control.</p>
+            <!-- ROUTE PLAN TAB -->
+            <div id="route-tab" class="tab-content" style="display: none;">
+                <div class="glass-card animate-in">
+                    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                        <h2>Optimized Route Map</h2>
+                        <span class="status-indicator live">LIVE GPS</span>
+                    </div>
+                    <div id="driverMap" style="height: 500px; width: 100%; border-radius: 15px; border: 1px solid var(--glass-border);"></div>
+                </div>
+            </div>
+
+            <!-- FUEL LOG TAB -->
+            <div id="fuel-tab" class="tab-content" style="display: none;">
+                <div class="dashboard-grid" style="grid-template-columns: 1fr 2fr; gap: 2rem;">
+                    <div class="glass-card animate-in">
+                        <h2 style="margin-bottom: 1.5rem;">Log Refuel</h2>
+                        <form id="fuelForm" onsubmit="submitFuelLog(event)">
+                            <div class="form-group">
+                                <label>Fuel Volume (Liters)</label>
+                                <div class="input-with-icon">
+                                    <i class="fas fa-gas-pump"></i>
+                                    <input type="number" step="0.1" id="fuelLiters" required placeholder="0.0">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Total Cost</label>
+                                <div class="input-with-icon">
+                                    <i class="fas fa-money-bill"></i>
+                                    <input type="number" step="0.01" id="fuelCost" required placeholder="0.00">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Current Odometer</label>
+                                <div class="input-with-icon">
+                                    <i class="fas fa-gauge-high"></i>
+                                    <input type="number" id="fuelOdo" required placeholder="0">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Receipt Photo (Optional)</label>
+                                <input type="file" id="fuelReceipt" accept="image/*" style="width:100%; color:var(--text-muted); background:rgba(255,255,255,0.05); padding:10px; border-radius:12px;">
+                            </div>
+                            <div class="form-group">
+                                <label>Notes</label>
+                                <textarea id="fuelNotes" rows="2" placeholder="Any vehicle issues?"></textarea>
+                            </div>
+                            <button type="submit" class="btn-premium" style="width:100%; justify-content:center; margin-top:1rem;" id="fuelSubmitBtn">Submit Log</button>
+                        </form>
+                    </div>
+
+                    <div class="glass-card animate-in" style="animation-delay: 0.1s;">
+                        <h2 style="margin-bottom: 1.5rem;">Refuel History</h2>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>DATE</th>
+                                        <th>LITERS</th>
+                                        <th>COST</th>
+                                        <th>ODOMETER</th>
+                                        <th>NOTES</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="fuelTable">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -138,13 +213,25 @@
         .modal-actions .btn-premium { width: 100%; justify-content: center; }
 
         .text-gradient { background: var(--grad-eco); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        /* Table Styles for Fuel Log */
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { padding: 16px; color: var(--text-muted); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; border-bottom: 1px solid var(--glass-border); }
+        td { padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.02); font-size: 0.9rem; }
+        tbody tr:hover { background: rgba(255,255,255,0.02); }
 
+        @media (max-width: 900px) {
+            .dashboard-grid { grid-template-columns: 1fr !important; }
+        }
         @media (max-width: 768px) {
             .mission-grid { grid-template-columns: 1fr; }
         }
     </style>
 
     <script src="js/app.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/driver-tabs.js"></script>
     <script>
         async function initDriverPage() {
             const user = JSON.parse(localStorage.getItem('user') || '{}');
