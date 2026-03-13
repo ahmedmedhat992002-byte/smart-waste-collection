@@ -136,6 +136,10 @@ function renderTrendChart(dailyReports) {
 function renderPerformanceChart(percent) {
     const ctx = document.getElementById('perfChart').getContext('2d');
     if (window.perfChart) window.perfChart.destroy();
+    
+    // Update center text display
+    const labelEl = document.getElementById('perfChartText');
+    if (labelEl) labelEl.innerText = percent + '%';
 
     window.perfChart = new Chart(ctx, {
         type: 'doughnut',

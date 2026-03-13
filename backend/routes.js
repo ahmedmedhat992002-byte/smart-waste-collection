@@ -287,11 +287,20 @@ router.get('/admin/stats', protect, authorize('admin'), async (req, res) => {
 
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const dailyReports = await Report.aggregate([
+        const rawDailyReports = await Report.aggregate([
             { $match: { createdAt: { $gte: sevenDaysAgo } } },
             { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, count: { $sum: 1 } } },
             { $sort: { _id: 1 } }
         ]);
+
+        const dailyReports = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dateStr = d.toISOString().split('T')[0];
+            const existing = rawDailyReports.find(r => r._id === dateStr);
+            dailyReports.push({ _id: dateStr, count: existing ? existing.count : 0 });
+        }
 
         const performance  = total > 0 ? Math.round((collected / total) * 100) : 0;
         const recentReports = await Report.find().limit(10).sort({ createdAt: -1 })
