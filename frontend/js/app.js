@@ -19,6 +19,10 @@ function showToast(message, type = 'info') {
 // Helper for Authenticated API Calls
 async function fetchWithAuth(url, options = {}) {
     const token = localStorage.getItem('token');
+    if (!token) {
+        console.error('CRITICAL: fetchWithAuth called but NO TOKEN found in localStorage.');
+    }
+
     const headers = {
         'Content-Type': 'application/json',
         ...(options.headers || {})
@@ -33,16 +37,21 @@ async function fetchWithAuth(url, options = {}) {
         delete headers['Content-Type'];
     }
 
-    const response = await fetch(url, { ...options, headers });
-    
-    if (response.status === 401) {
-        // Token expired or invalid
-        localStorage.clear();
-        window.location.href = 'index.html';
-        return;
+    try {
+        const response = await fetch(url, { ...options, headers });
+        
+        if (response.status === 401) {
+            console.warn('Unauthorized (401) - Clearing session');
+            localStorage.clear();
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        return response;
+    } catch (err) {
+        console.error('Fetch error in fetchWithAuth:', err);
+        throw err;
     }
-    
-    return response;
 }
 
 async function checkAuth() {
@@ -56,14 +65,24 @@ async function checkAuth() {
         if (document.getElementById('authButtons')) document.getElementById('authButtons').style.display = 'none';
         if (document.getElementById('userInfo')) document.getElementById('userInfo').style.display = 'flex';
         
-        // Dynamic Nav Links
-        const navLinks = document.querySelector('.nav-links');
-        if (navLinks && !document.getElementById('rewardsLink')) {
-            const rewards = document.createElement('a');
-            rewards.id = 'rewardsLink';
-            rewards.href = 'rewards.html';
-            rewards.innerHTML = 'Eco Store';
-            navLinks.appendChild(rewards);
+        // --- Dynamic Nav Control ---
+        const activeUser = JSON.parse(localStorage.getItem('user') || '{}');
+        const isAdmin = activeUser.role === 'admin';
+        
+        // Find and toggle Admin link
+        const navLinks = document.getElementById('navLinks') || document.querySelector('.nav-links');
+        if (navLinks) {
+            const adminLink = Array.from(navLinks.querySelectorAll('a')).find(a => a.textContent.includes('Admin'));
+            if (adminLink) adminLink.style.display = isAdmin ? 'block' : 'none';
+
+            // Add Eco Store if missing
+            if (!document.getElementById('rewardsLink')) {
+                const rewards = document.createElement('a');
+                rewards.id = 'rewardsLink';
+                rewards.href = 'rewards.html';
+                rewards.innerHTML = 'Eco Store';
+                navLinks.appendChild(rewards);
+            }
         }
 
         // Refresh User Stats from Backend
@@ -76,17 +95,11 @@ async function checkAuth() {
             }
         } catch (e) { console.warn('Stat sync failed'); }
 
-        if (document.getElementById('userHandle')) document.getElementById('userHandle').innerText = user.name.split(' ')[0];
+        if (document.getElementById('userHandle')) {
+            document.getElementById('userHandle').innerText = user.name.split(' ')[0];
+        }
         if (document.getElementById('userPoints')) {
             document.getElementById('userPoints').innerHTML = `<i class="fas fa-coins"></i> ${user.ecoPoints || 0}`;
-        }
-
-        // Home Page Personal Impact Dashboard
-        const personalImpact = document.getElementById('personalImpact');
-        if (personalImpact && user.role === 'citizen') {
-            personalImpact.style.display = 'block';
-            const dashPoints = document.getElementById('dashPoints');
-            if (dashPoints) dashPoints.innerText = user.ecoPoints || 0;
         }
     }
 }
@@ -193,8 +206,10 @@ if (reportForm) {
     reportForm.onsubmit = async (e) => {
         e.preventDefault();
         const user = JSON.parse(localStorage.getItem('user') || '{}');
-        if (!user.id) {
-            showToast('Authentication required. Please sign in.', 'error');
+        const token = localStorage.getItem('token');
+        
+        if (!user.id || !token) {
+            showToast('Authentication required. Session may have expired.', 'error');
             return showModal('loginModal');
         }
         if (!currentCoords) return showToast('Please secure GPS coordinates first.', 'error');
