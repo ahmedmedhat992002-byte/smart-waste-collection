@@ -463,6 +463,15 @@ router.put('/admin/users/:id/role', protect, authorize('admin'), async (req, res
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// DELETE /api/admin/users/:id
+router.delete('/admin/users/:id', protect, authorize('admin'), async (req, res) => {
+    try {
+        const user = await User.findByIdAndDelete(req.params.id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        res.json({ message: 'User deleted successfully' });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // POST /api/admin/assign-driver  &  /api/admin/assign-task (legacy)
 const assignDriver = async (req, res) => {
     try {

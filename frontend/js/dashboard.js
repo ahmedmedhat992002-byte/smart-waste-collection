@@ -337,6 +337,11 @@ function renderUsers(users) {
             </td>
             <td style="color:var(--primary); font-weight:700;">${u.ecoPoints || 0}</td>
             <td style="font-size:0.85rem; color:var(--text-muted);">${new Date(u.createdAt).toLocaleDateString()}</td>
+            <td>
+                <button class="btn-icon" style="color:#ef4444; border-color:rgba(239,68,68,0.2);" onclick="deleteUser('${u._id}', '${u.name}')" title="Delete User">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </td>
         `;
         tbody.appendChild(tr);
     });
@@ -353,6 +358,26 @@ async function changeUserRole(userId, newRole) {
     } else {
         showToast('Failed to update user role', 'error');
         fetchAllUsers(); // revert changes visually
+    }
+}
+
+async function deleteUser(userId, name) {
+    if (!confirm(`Are you sure you want to delete user "${name}"? This action cannot be undone.`)) return;
+    
+    try {
+        const res = await fetchWithAuth(`${API_URL}/admin/users/${userId}`, {
+            method: 'DELETE'
+        });
+        
+        if (res && res.ok) {
+            showToast('User deleted successfully', 'success');
+            fetchAllUsers(); // Refresh list
+        } else {
+            const data = await res.json();
+            showToast(data.error || 'Failed to delete user', 'error');
+        }
+    } catch (err) {
+        showToast('Error deleting user', 'error');
     }
 }
 
