@@ -376,6 +376,8 @@ async function deleteUser(userId, name) {
 
     // Remove any previous listeners to avoid multiple triggers
     const newConfirmBtn = confirmBtn.cloneNode(true);
+    newConfirmBtn.disabled = false;
+    newConfirmBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Delete';
     confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
 
     newConfirmBtn.onclick = async () => {
