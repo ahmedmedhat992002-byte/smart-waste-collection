@@ -463,6 +463,81 @@ router.put('/admin/users/:id/role', protect, authorize('admin'), async (req, res
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ─── PUBLIC & AUTH ENHANCEMENTS ──────────────────────────────────────────────
+
+// GET /api/public/leaderboard
+router.get('/public/leaderboard', async (req, res) => {
+    try {
+        const users = await User.find({ role: 'citizen' })
+            .select('name ecoPoints stats')
+            .sort({ ecoPoints: -1 })
+            .limit(50);
+        
+        const leaderboard = users.map((u, i) => ({
+            rank: i + 1,
+            name: u.name,
+            points: u.ecoPoints || 0,
+            reports: (u.stats && u.stats.totalReports) || 0
+        }));
+        res.json(leaderboard);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/auth/profile/:id
+router.get('/auth/profile/:id', protect, async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id).select('-password');
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        // Count reports for extra stats
+        const reportCount = await Report.countDocuments({ reportedBy: user._id });
+        const userObj = user.toObject();
+        userObj.stats = { ...userObj.stats, totalReports: reportCount };
+        
+        res.json(userObj);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PUT /api/auth/profile/update
+router.put('/auth/profile/update', protect, async (req, res) => {
+    try {
+        const { name } = req.body;
+        if (!name) return res.status(400).json({ error: 'Name is required' });
+        
+        const user = await User.findByIdAndUpdate(req.user._id, { name }, { new: true }).select('-password');
+        res.json(user);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ─── ADMIN ENHANCEMENTS ───────────────────────────────────────────────────────
+
+// GET /api/admin/reports/export  &  /api/admin/export-csv
+const exportReports = async (req, res) => {
+    try {
+        const reports = await Report.find().sort({ createdAt: -1 })
+            .populate('reportedBy', 'name email').populate('assignedDriver', 'name');
+
+        let csv = 'ReportID,Category,Description,Status,ReportedBy,ReportedByEmail,Driver,Lat,Lng,Date\n';
+        reports.forEach(r => {
+            csv += `${r._id},${r.category},"${(r.description||'').replace(/"/g,'""')}",${r.status},${r.reportedBy?.name||''},${r.reportedBy?.email||''},${r.assignedDriver?.name||''},${r.lat},${r.lng},${r.createdAt.toISOString()}\n`;
+        });
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=smartwaste_reports.csv');
+        res.status(200).send(csv);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+};
+router.get('/admin/reports/export', protect, authorize('admin'), exportReports);
+router.get('/admin/export-csv',     protect, authorize('admin'), exportReports);
+
+// GET /api/admin/pending-count
+router.get('/admin/pending-count', protect, authorize('admin'), async (req, res) => {
+    try {
+        const count = await Report.countDocuments({ status: 'pending' });
+        res.json({ count });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // DELETE /api/admin/users/:id
 router.delete('/admin/users/:id', protect, authorize('admin'), async (req, res) => {
     try {
