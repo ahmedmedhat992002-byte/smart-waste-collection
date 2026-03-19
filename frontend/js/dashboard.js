@@ -362,8 +362,31 @@ async function changeUserRole(userId, newRole) {
 }
 
 async function deleteUser(userId, name) {
-    if (!confirm(`Are you sure you want to delete user "${name}"? This action cannot be undone.`)) return;
-    
+    const modal = document.getElementById('deleteConfirmModal');
+    const nameSpan = document.getElementById('deleteUserName');
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    if (!modal || !nameSpan || !confirmBtn) {
+        // Fallback for safety
+        if (!confirm(`Are you sure you want to delete user "${name}"?`)) return;
+        return proceedWithDeletion(userId);
+    }
+
+    nameSpan.innerText = name;
+    showModal('deleteConfirmModal');
+
+    // Remove any previous listeners to avoid multiple triggers
+    const newConfirmBtn = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+
+    newConfirmBtn.onclick = async () => {
+        newConfirmBtn.disabled = true;
+        newConfirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+        await proceedWithDeletion(userId);
+        hideModal('deleteConfirmModal');
+    };
+}
+
+async function proceedWithDeletion(userId) {
     try {
         const res = await fetchWithAuth(`${API_URL}/admin/users/${userId}`, {
             method: 'DELETE'
@@ -392,4 +415,6 @@ function filterUsers() {
     );
     renderUsers(filtered);
 }
+
+document.addEventListener('DOMContentLoaded', initAdminDashboard);
 
