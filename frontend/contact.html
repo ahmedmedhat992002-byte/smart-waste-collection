@@ -3,12 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contact Us | SmartWaste</title>
+    <title>Contact Us | SmartWaste Sustainability</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 </head>
 <body>
-    <nav class="navbar glass-card" id="mainNav">
+    <nav class="navbar glass-card">
         <div class="nav-container">
             <a href="index.html" class="logo">
                 <div class="logo-icon"><i class="fas fa-recycle"></i></div>
@@ -22,40 +25,159 @@
                 <a href="leaderboard.html">Leaderboard</a>
                 <a href="contact.html" class="active">Contact</a>
                 <a href="faq.html">FAQ</a>
-                <a href="dashboard.html" style="display: none;">Admin</a>
             </div>
             <button class="mobile-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
         </div>
     </nav>
 
-    <main class="container animate-in" style="padding: 100px 0;">
+    <main class="container animate-in" style="padding: 60px 0;">
         <div class="section-badge">Get In Touch</div>
-        <h1 class="text-gradient" style="font-size: 3.5rem; margin-bottom: 3rem;">Contact Our Team</h1>
-        
-        <div class="stats-grid">
-            <div class="glass-card stat-item">
-                <form id="contactForm" style="display: flex; flex-direction: column; gap: 1.5rem; width: 100%;">
+        <h1 class="text-gradient" style="font-size: 3.5rem; margin-bottom: 2rem;">Contact Our Team</h1>
+        <p style="color: var(--text-muted); max-width: 600px; margin-bottom: 4rem;">Have questions about waste collection, rewards, or our technology? Our dedicated team is here to help you build a cleaner city.</p>
+
+        <div class="contact-grid">
+            <!-- Left: Contact Form -->
+            <div class="glass-card">
+                <h2 style="margin-bottom: 2rem;">Send us a Message</h2>
+                <form id="contactForm" style="display: flex; flex-direction: column; gap: 1.5rem;">
                     <div class="form-group">
-                        <label>Name</label>
-                        <input type="text" placeholder="John Doe" required style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white; border-radius: 8px;">
+                        <label>Full Name</label>
+                        <input type="text" id="contactName" placeholder="Enter your name" required>
                     </div>
                     <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" placeholder="john@example.com" required style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white; border-radius: 8px;">
+                        <label>Email Address</label>
+                        <input type="email" id="contactEmail" placeholder="your@email.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Subject</label>
+                        <select id="contactSubject">
+                            <option>General Inquiry</option>
+                            <option>Report a Problem</option>
+                            <option>Partnership Interest</option>
+                            <option>Rewards & Points</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>Message</label>
-                        <textarea placeholder="How can we help?" required style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white; border-radius: 8px; min-height: 150px;"></textarea>
+                        <textarea id="contactMessage" placeholder="How can we help you?" rows="5" required></textarea>
                     </div>
-                    <button type="submit" class="btn-premium">Send Message</button>
+                    <button type="submit" class="btn-premium">
+                        <i class="fas fa-paper-plane"></i>
+                        Send Message
+                    </button>
                 </form>
+            </div>
+
+            <!-- Right: Info & Map -->
+            <div class="contact-info-container">
+                <div class="glass-card contact-info-card">
+                    <i class="fas fa-envelope"></i>
+                    <div class="contact-info-text">
+                        <h3>Email Us</h3>
+                        <p>support@smartwaste.city</p>
+                    </div>
+                </div>
+
+                <div class="glass-card contact-info-card">
+                    <i class="fas fa-phone-alt"></i>
+                    <div class="contact-info-text">
+                        <h3>Call Support</h3>
+                        <p>+1 (555) ECO-CITY</p>
+                    </div>
+                </div>
+
+                <div class="glass-card contact-info-card">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <div class="contact-info-text">
+                        <h3>Headquarters</h3>
+                        <p>Ecotech Plaza, 101 Innovation Way</p>
+                    </div>
+                </div>
+
+                <div id="contactMap"></div>
+
+                <div class="glass-card" style="padding: 1.5rem;">
+                    <h3 style="font-size: 1rem; margin-bottom: 1rem; color: var(--text-white);">Office Hours</h3>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                        <span style="color: var(--text-muted);">Mon - Fri</span>
+                        <span style="font-weight: 600;">9:00 AM - 6:00 PM</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                        <span style="color: var(--text-muted);">Sat - Sun</span>
+                        <span style="font-weight: 600;">Closed</span>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
 
-    <footer style="padding: 60px 5%; background: rgba(0,0,0,0.3); border-top: 1px solid var(--glass-border); text-align: center;">
-        <p>&copy; 2026 SmartWaste System. All rights reserved.</p>
+    <footer class="footer-main">
+        <div class="container footer-grid">
+            <div class="footer-col footer-about">
+                <a href="index.html" class="logo" style="margin-bottom: 1.5rem;">
+                    <div class="logo-icon"><i class="fas fa-recycle"></i></div>
+                    <span>SMARTWASTE</span>
+                </a>
+                <p>Building cleaner, smarter cities through citizen engagement and real-time data analytics.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h4>Platform</h4>
+                <ul class="footer-links">
+                    <li><a href="features.html">Features</a></li>
+                    <li><a href="leaderboard.html">Leaderboard</a></li>
+                    <li><a href="report.html">Report Issue</a></li>
+                    <li><a href="tips.html">Eco-Tips</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Support</h4>
+                <ul class="footer-links">
+                    <li><a href="faq.html">FAQ</a></li>
+                    <li><a href="contact.html">Contact Us</a></li>
+                    <li><a href="about.html">About Us</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Stay Green</h4>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Join our newsletter for weekly sustainability updates.</p>
+                <form onsubmit="event.preventDefault(); showToast('Subscribed!', 'success');" style="display: flex; gap: 0.5rem;">
+                    <input type="email" placeholder="Email" required style="padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white; flex: 1; font-size: 0.85rem;">
+                    <button type="submit" class="btn-premium" style="padding: 10px 15px;"><i class="fas fa-paper-plane"></i></button>
+                </form>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 SmartWaste Sustainability. Built for a better tomorrow.</p>
+        </div>
     </footer>
+
     <script src="js/app.js"></script>
+    <script>
+        // Init contact map
+        document.addEventListener('DOMContentLoaded', () => {
+            const map = L.map('contactMap', { zoomControl: false }).setView([40.7128, -74.0060], 13);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; CartoDB'
+            }).addTo(map);
+            L.marker([40.7128, -74.0060]).addTo(map).bindPopup('SmartWaste HQ').openPopup();
+        });
+
+        // Contact form handling
+        document.getElementById('contactForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            showToast('Message sent successfully! Our team will reach out soon.', 'success');
+            e.target.reset();
+        });
+    </script>
 </body>
 </html>
