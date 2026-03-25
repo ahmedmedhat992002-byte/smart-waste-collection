@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us | SmartWaste</title>
+    <meta name="description" content="Learn about our mission to build cleaner, smarter cities through citizen engagement.">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar glass-card" id="mainNav">
+        <div class="nav-container">
+            <a href="index.html" class="logo">
+                <div class="logo-icon"><i class="fas fa-recycle"></i></div>
+                <span>SMARTWASTE</span>
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="index.html">Home</a>
+                <a href="about.html" class="active">About</a>
+                <a href="features.html">Features</a>
+                <a href="report.html">Report Issue</a>
+                <a href="leaderboard.html">Leaderboard</a>
+                <a href="contact.html">Contact</a>
+                <a href="faq.html">FAQ</a>
+                <a href="dashboard.html" style="display: none;">Admin</a>
+            </div>
+            <div class="nav-auth" id="authSection">
+                <button class="theme-toggle" onclick="toggleTheme()"><i class="fas fa-sun"></i></button>
+                <div id="authButtons">
+                    <button class="btn-premium secondary" onclick="showModal('loginModal')">Sign In</button>
+                </div>
+                <div id="userInfo" style="display: none;">
+                    <span class="points-badge"><i class="fas fa-leaf"></i> <span id="userPoints">0</span> pts</span>
+                    <a href="profile.html" id="userHandle" style="color:var(--text-white); text-decoration:none; font-weight:600;"></a>
+                    <button class="btn-icon" onclick="logout()"><i class="fas fa-sign-out-alt"></i></button>
+                </div>
+            </div>
+            <button class="mobile-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
+        </div>
+    </nav>
+
+    <main class="container animate-in" style="padding: 100px 0;">
+        <div class="section-badge">Our Journey</div>
+        <h1 class="text-gradient" style="font-size: 3.5rem; margin-bottom: 2rem;">Pioneering Smart Cities</h1>
+        <p style="font-size: 1.2rem; max-width: 800px; margin-bottom: 4rem;">We are dedicated to revolutionizing urban waste management through cutting-edge technology and citizen-first initiatives.</p>
+
+        <div class="stats-grid">
+            <div class="glass-card stat-item">
+                <h3>Our Mission</h3>
+                <div class="value" style="font-size: 1.4rem; color: var(--primary);">Improve urban waste management using AI.</div>
+            </div>
+            <div class="glass-card stat-item">
+                <h3>Our Vision</h3>
+                <div class="value" style="font-size: 1.4rem; color: var(--secondary);">Smart, sustainable cities powered by data.</div>
+            </div>
+        </div>
+
+        <section style="margin-top: 80px;">
+            <h2 class="text-gradient">The Innovation Team</h2>
+            <div class="features-grid" style="margin-top: 40px;">
+                <div class="glass-card">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">👨‍💻</div>
+                    <h3>Alex Rivera</h3>
+                    <p style="color: var(--primary);">Head of Engineering</p>
+                </div>
+                <div class="glass-card">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">👩‍🎨</div>
+                    <h3>Sarah Chen</h3>
+                    <p style="color: var(--secondary);">Lead UX Architect</p>
+                </div>
+                <div class="glass-card">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">🌍</div>
+                    <h3>Marcus Thorne</h3>
+                    <p style="color: var(--accent);">Sustainability Director</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer style="padding: 60px 5%; background: rgba(0,0,0,0.3); border-top: 1px solid var(--glass-border); text-align: center;">
+        <p>&copy; 2026 SmartWaste System. All rights reserved.</p>
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
