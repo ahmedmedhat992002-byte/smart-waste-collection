@@ -85,6 +85,13 @@ function checkAuth() {
                 `;
             }
         }
+        
+        // Hide dashboard links for citizens
+        if (user.role === 'citizen') {
+            document.querySelectorAll('a[href*="dashboard.html"]').forEach(link => {
+                link.style.display = 'none';
+            });
+        }
     } else {
         if (authButtons) authButtons.style.display = 'flex';
         if (userInfo)    userInfo.style.display = 'none';
