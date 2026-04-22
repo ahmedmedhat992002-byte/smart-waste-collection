@@ -3,8 +3,36 @@ const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
 const fs      = require('fs');
+const mongoose = require('mongoose');
 
 const app = express();
+
+// ── Database Connection ──────────────────────────────────────────────────────
+const MONGO_URI = process.env.MONGO_URI;
+
+if (MONGO_URI) {
+    mongoose.connect(MONGO_URI)
+        .then(async () => {
+            console.log('✅ Connected to MongoDB Atlas');
+            // Seed Admin if not exists
+            const User = require('./models/User');
+            const adminExists = await User.findOne({ role: 'admin' });
+            if (!adminExists) {
+                const bcrypt = require('bcryptjs');
+                const hashedAdminPw = await bcrypt.hash('password', 10);
+                await User.create({
+                    name: 'System Admin',
+                    email: 'admin@smartwaste.ai',
+                    password: hashedAdminPw,
+                    role: 'admin'
+                });
+                console.log('👤 Default Admin created (admin@smartwaste.ai / password)');
+            }
+        })
+        .catch(err => console.error('❌ MongoDB Connection Error:', err));
+} else {
+    console.warn('⚠️  MONGO_URI not found. App will run in memory (not persistent on Vercel).');
+}
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(cors());
