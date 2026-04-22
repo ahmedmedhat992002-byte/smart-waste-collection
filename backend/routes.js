@@ -1,628 +1,405 @@
 const express = require('express');
 const router  = express.Router();
-const multer  = require('multer');
-const path    = require('path');
-const fs      = require('fs');
 const bcrypt  = require('bcryptjs');
 const jwt     = require('jsonwebtoken');
-const mongoose = require('mongoose');
+const path    = require('path');
+const multer  = require('multer');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'smart_waste_secret_key_2024';
-
-// ─── Mongoose Models (inline to avoid path issues in serverless) ──────────────
-
-// User
-const userSchema = new mongoose.Schema({
-    name:      { type: String, required: true, trim: true },
-    email:     { type: String, required: true, unique: true, lowercase: true, trim: true },
-    password:  { type: String, required: true },
-    role:      { type: String, enum: ['citizen', 'admin', 'driver'], default: 'citizen' },
-    profilePic:{ type: String, default: '' },
-    ecoPoints: { type: Number, default: 0 },
-    stats: {
-        totalReports: { type: Number, default: 0 },
-        impactScore:  { type: Number, default: 0 }
-    }
-}, { timestamps: true });
-
-// Report
-const reportSchema = new mongoose.Schema({
-    category:  { type: String, required: true, enum: ['plastic','paper','metal','mixed','electronic','organic'] },
-    description: { type: String, default: '' },
-    location: {
-        lat:     { type: Number, required: true },
-        lng:     { type: Number, required: true },
-        address: { type: String, default: '' }
-    },
-    images:    [{ type: String }],
-    status:    { type: String, enum: ['pending','assigned','in-transit','collected','cancelled'], default: 'pending' },
-    priority:  { type: String, enum: ['low','medium','high'], default: 'medium' },
-    reportedBy:    { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    assignedDriver:{ type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
-    pointsAwarded: { type: Boolean, default: false }
-}, { timestamps: true });
-
-// EcoPoint
-const ecoPointSchema = new mongoose.Schema({
-    userId:          { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    amount:          { type: Number, required: true },
-    transactionType: { type: String, enum: ['earn','redeem'], default: 'earn' },
-    reason:          { type: String, required: true },
-    reportId:        { type: mongoose.Schema.Types.ObjectId, ref: 'Report', default: null }
-}, { timestamps: true });
-
-// FuelLog
-const fuelLogSchema = new mongoose.Schema({
-    driverId:      { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    liters:        { type: Number, required: true },
-    cost:          { type: Number, required: true },
-    odometer:      { type: Number, required: true },
-    receiptImage:  { type: String },
-    notes:         { type: String, default: '' }
-}, { timestamps: true });
-
-// Register models safely (avoid OverwriteModelError on hot-reload)
-const User     = mongoose.models.User     || mongoose.model('User', userSchema);
-const Report   = mongoose.models.Report || mongoose.model('Report', reportSchema);
-const EcoPoint = mongoose.models.EcoPoint || mongoose.model('EcoPoint', ecoPointSchema);
-const FuelLog  = mongoose.models.FuelLog || mongoose.model('FuelLog', fuelLogSchema);
-
-// ─── Multer ───────────────────────────────────────────────────────────────────
-const uploadDir = path.join(process.cwd(), 'uploads');
-if (!fs.existsSync(uploadDir)) {
-    try { fs.mkdirSync(uploadDir, { recursive: true }); } catch (e) {}
-}
-
+// ── Multer setup for image uploads ───────────────────────────────────────────
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, uploadDir),
-    filename:    (req, file, cb) => cb(null, `waste_${Date.now()}${path.extname(file.originalname)}`)
+    destination: (req, file, cb) => {
+        const dest = process.env.VERCEL ? '/tmp/uploads' : path.join(__dirname, '../uploads');
+        try {
+            if (!require('fs').existsSync(dest)) require('fs').mkdirSync(dest, { recursive: true });
+        } catch (e) {}
+        cb(null, dest);
+    },
+    filename:    (req, file, cb) => {
+        const ext = path.extname(file.originalname);
+        cb(null, `report_${Date.now()}${ext}`);
+    }
 });
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = multer({
+    storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) cb(null, true);
+        else cb(new Error('Only image files are allowed'));
+    }
+});
 
-// ─── Auth Middleware ──────────────────────────────────────────────────────────
-const protect = async (req, res, next) => {
+// ── In-Memory Database ────────────────────────────────────────────────────────
+// Password for ALL demo users is:  password
+let users = [
+    { _id: '0',  name: 'Demo Admin',   email: 'admin@smartwaste.ai', password: '$2a$10$KDDyOJWq6.OXqt13EY3RhOAXAQ0gwsfkS9Oszl093esL.ekRRZN7m', role: 'admin',   createdAt: new Date('2026-01-01') },
+    { _id: 'd1', name: 'Ali (Driver)', email: 'driver1@fleet.com',   password: '$2a$10$KDDyOJWq6.OXqt13EY3RhOAXAQ0gwsfkS9Oszl093esL.ekRRZN7m', role: 'driver',  status: 'active', createdAt: new Date('2026-01-15') },
+    { _id: 'c1', name: 'Sarah Citizen',email: 'sarah@me.com',        password: '$2a$10$KDDyOJWq6.OXqt13EY3RhOAXAQ0gwsfkS9Oszl093esL.ekRRZN7m', role: 'citizen', ecoPoints: 150,  createdAt: new Date('2026-02-01') },
+    { _id: 'c2', name: 'Omar Hassan',  email: 'omar@city.gov',       password: '$2a$10$KDDyOJWq6.OXqt13EY3RhOAXAQ0gwsfkS9Oszl093esL.ekRRZN7m', role: 'citizen', ecoPoints: 80,   createdAt: new Date('2026-02-10') },
+    { _id: 'c3', name: 'Layla Ahmed',  email: 'layla@eco.org',       password: '$2a$10$KDDyOJWq6.OXqt13EY3RhOAXAQ0gwsfkS9Oszl093esL.ekRRZN7m', role: 'citizen', ecoPoints: 210,  createdAt: new Date('2026-03-01') },
+];
+
+let reports = [
+    { _id: 'r1', user: 'c1', category: 'Plastics',  status: 'collected',  imageUrl: null, location: { lat: 30.0500, lng: 31.2400, address: 'Tahrir Square, Cairo'      }, description: 'Large pile of plastic bottles', createdAt: new Date(Date.now() - 5*86400000), updatedAt: new Date(Date.now() - 4*86400000) },
+    { _id: 'r2', user: 'c2', category: 'Organic',   status: 'pending',    imageUrl: null, location: { lat: 30.0600, lng: 31.2200, address: 'Zamalek, Cairo'             }, description: 'Food waste overflowing bin',   createdAt: new Date(Date.now() - 3*86400000), updatedAt: new Date(Date.now() - 3*86400000) },
+    { _id: 'r3', user: 'c1', category: 'Plastics',  status: 'dispatched', imageUrl: null, location: { lat: 30.0400, lng: 31.2500, address: 'Garden City, Cairo'         }, description: 'Illegal plastic dumping',     createdAt: new Date(Date.now() - 1*86400000), updatedAt: new Date(Date.now() - 86400000)   },
+    { _id: 'r4', user: 'c3', category: 'Metal',     status: 'collected',  imageUrl: null, location: { lat: 30.0700, lng: 31.2300, address: 'Dokki, Cairo'               }, description: 'Old car parts abandoned',    createdAt: new Date(Date.now() - 8*3600000),  updatedAt: new Date(Date.now() - 6*3600000)  },
+    { _id: 'r5', user: 'c2', category: 'Glass',     status: 'pending',    imageUrl: null, location: { lat: 30.0450, lng: 31.2600, address: 'Maadi, Cairo'               }, description: 'Broken glass on sidewalk',   createdAt: new Date(Date.now() - 2*3600000),  updatedAt: new Date(Date.now() - 2*3600000)  },
+    { _id: 'r6', user: 'c3', category: 'Hazardous', status: 'pending',    imageUrl: null, location: { lat: 30.0350, lng: 31.2150, address: 'Agouza, Cairo'              }, description: 'Chemical drums dumped',      createdAt: new Date(Date.now() - 1*3600000),  updatedAt: new Date(Date.now() - 1*3600000)  },
+];
+
+let contacts = [];
+let idCounter = 200;
+const generateId = () => String(idCounter++);
+
+// ── Real-Time Simulation ─────────────────────────────────────────────────────
+setInterval(() => {
+    // Keep memory clean
+    if (reports.length > 200) reports.splice(0, 10);
+    
+    const categories = ['Plastics', 'Organic', 'Metal', 'Glass', 'Hazardous', 'E-Waste'];
+    const addresses = ['Tahrir Square', 'Zamalek', 'Nasr City', 'Maadi', 'Heliopolis', 'Dokki', 'Mohandeseen'];
+    const citizens = users.filter(u => u.role === 'citizen');
+    
+    const newReport = {
+        _id: generateId(),
+        user: citizens[Math.floor(Math.random() * citizens.length)]._id,
+        category: categories[Math.floor(Math.random() * categories.length)],
+        status: 'pending',
+        imageUrl: null,
+        location: {
+            lat: 30.0 + Math.random() * 0.1,
+            lng: 31.2 + Math.random() * 0.1,
+            address: addresses[Math.floor(Math.random() * addresses.length)] + ', Cairo'
+        },
+        description: 'Auto-detected anomaly via smart bin sensor (Simulation)',
+        createdAt: new Date(),
+        updatedAt: new Date()
+    };
+    reports.push(newReport);
+}, 10000); // 10 seconds
+
+// ── JWT Helpers ───────────────────────────────────────────────────────────────
+const JWT_SECRET = process.env.JWT_SECRET || 'smartwaste_secret_key_2026';
+
+const signToken = (user) =>
+    jwt.sign({ id: user._id, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
+
+const authMiddleware = (req, res, next) => {
+    const header = req.header('Authorization');
+    if (!header) return res.status(401).json({ error: 'No token — authorization denied' });
     try {
-        const auth = req.headers.authorization;
-        if (!auth || !auth.startsWith('Bearer ')) {
-            return res.status(401).json({ error: 'Not authorised – token missing' });
-        }
-        const decoded = jwt.verify(auth.split(' ')[1], JWT_SECRET);
-        req.user = await User.findById(decoded.id);
-        if (!req.user) return res.status(401).json({ error: 'User not found' });
+        req.user = jwt.verify(header.split(' ')[1], JWT_SECRET);
         next();
     } catch {
-        return res.status(401).json({ error: 'Not authorised – invalid token' });
+        res.status(401).json({ error: 'Token invalid or expired' });
     }
 };
 
-const authorize = (...roles) => (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-        return res.status(403).json({ error: `Role '${req.user.role}' is not permitted` });
-    }
-    next();
-};
+const adminMiddleware = (req, res, next) =>
+    req.user.role === 'admin'
+        ? next()
+        : res.status(403).json({ error: 'Admin access required' });
 
-// ─── AUTHENTICATION ───────────────────────────────────────────────────────────
+const driverOrAdminMiddleware = (req, res, next) =>
+    (req.user.role === 'driver' || req.user.role === 'admin')
+        ? next()
+        : res.status(403).json({ error: 'Driver/Admin access required' });
 
-// POST /api/register  &  /api/auth/register
-const registerHandler = async (req, res) => {
+// ── Helper: safe user projection ─────────────────────────────────────────────
+const safeUser = (u) => ({
+    _id: u._id, name: u.name, email: u.email, role: u.role,
+    ecoPoints: u.ecoPoints ?? 0, status: u.status, createdAt: u.createdAt
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+//  PUBLIC ROUTES
+// ════════════════════════════════════════════════════════════════════════════
+
+// Public stats for the landing page hero
+router.get('/public-stats', (_req, res) => {
+    const collected = reports.filter(r => r.status === 'collected').length;
+    res.json({
+        totalReports:   reports.length + 1250,
+        activeCitizens: users.filter(u => u.role === 'citizen').length + 8500,
+        co2Reduction:   45,
+        totalTons:      reports.length + 1540,
+        collectedToday: collected,
+    });
+});
+
+// Contact form
+router.post('/contact', (req, res) => {
+    const { name, email, subject, message } = req.body;
+    if (!name || !email || !message)
+        return res.status(400).json({ error: 'Name, email and message are required' });
+    contacts.push({ _id: generateId(), name, email, subject, message, createdAt: new Date() });
+    res.json({ message: 'Message received — we will be in touch soon!' });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+//  AUTHENTICATION
+// ════════════════════════════════════════════════════════════════════════════
+
+// Verify token & return current user
+router.get('/auth/me', authMiddleware, (req, res) => {
+    const user = users.find(u => u._id === req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(safeUser(user));
+});
+
+// Register
+router.post('/auth/register', async (req, res) => {
     try {
         const { name, email, password, role } = req.body;
-        if (!name || !email || !password) {
-            return res.status(400).json({ error: 'Please provide name, email and password' });
-        }
-        if (await User.findOne({ email })) {
-            return res.status(400).json({ error: 'An account with this email already exists' });
-        }
-        const hashed = await bcrypt.hash(password, 12);
-        await User.create({ name, email, password: hashed, role: role || 'citizen' });
-        res.status(201).json({ message: 'Account created successfully. Please sign in.' });
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
-};
 
-// POST /api/login  &  /api/auth/login
-const loginHandler = async (req, res) => {
+        // Validation
+        if (!name || name.trim().length < 2)
+            return res.status(400).json({ error: 'Name must be at least 2 characters' });
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+            return res.status(400).json({ error: 'Valid email is required' });
+        if (!password || password.length < 6)
+            return res.status(400).json({ error: 'Password must be at least 6 characters' });
+        if (users.find(u => u.email.toLowerCase() === email.toLowerCase()))
+            return res.status(400).json({ error: 'An account with this email already exists' });
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const allowedRole    = ['citizen', 'driver', 'admin'].includes(role) ? role : 'citizen';
+        const newUser = {
+            _id: generateId(), name: name.trim(), email: email.toLowerCase(),
+            password: hashedPassword, role: allowedRole,
+            ecoPoints: allowedRole === 'citizen' ? 0 : undefined,
+            status: allowedRole === 'driver' ? 'available' : undefined,
+            createdAt: new Date()
+        };
+        users.push(newUser);
+
+        const token = signToken(newUser);
+        res.status(201).json({ token, user: safeUser(newUser) });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Login
+router.post('/auth/login', async (req, res) => {
     try {
         const { email, password } = req.body;
-        if (!email || !password) {
-            return res.status(400).json({ error: 'Please provide email and password' });
-        }
-        const user = await User.findOne({ email });
-        if (!user || !(await bcrypt.compare(password, user.password))) {
-            return res.status(401).json({ error: 'Invalid email or password' });
-        }
-        const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
-        res.json({
-            token,
-            user: { id: user._id, name: user.name, email: user.email, role: user.role, ecoPoints: user.ecoPoints }
-        });
-    } catch (err) {
-        res.status(500).json({ error: 'Internal server error' });
-    }
-};
+        if (!email || !password)
+            return res.status(400).json({ error: 'Email and password are required' });
 
-router.post('/register',      registerHandler);
-router.post('/auth/register', registerHandler);
-router.post('/login',         loginHandler);
-router.post('/auth/login',    loginHandler);
+        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+        if (!user) return res.status(400).json({ error: 'Invalid email or password' });
 
-// GET /api/auth/profile/:userId
-router.get('/auth/profile/:userId', async (req, res) => {
-    try {
-        const user = await User.findById(req.params.userId).select('name email role ecoPoints stats');
-        if (!user) return res.status(404).json({ error: 'User not found' });
-        res.json(user);
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) return res.status(400).json({ error: 'Invalid email or password' });
+
+        const token = signToken(user);
+        res.json({ token, user: safeUser(user) });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// POST /api/auth/redeem  - Deduct eco-points for rewards
-router.post('/auth/redeem', protect, async (req, res) => {
-    try {
-        const { cost, rewardName } = req.body;
-        if (!cost || !rewardName) return res.status(400).json({ error: 'cost and rewardName required' });
-        
-        const user = await User.findById(req.user._id);
-        if (!user) return res.status(404).json({ error: 'User not found' });
-        if (user.ecoPoints < cost) return res.status(400).json({ error: `Insufficient points. You need ${cost - user.ecoPoints} more.` });
-        
-        user.ecoPoints -= cost;
-        await user.save();
-        
-        res.json({ message: `${rewardName} redeemed successfully!`, ecoPoints: user.ecoPoints });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+// Legacy aliases
+router.post('/register', (req, res) => res.redirect(307, '/api/auth/register'));
+router.post('/login',    (req, res) => res.redirect(307, '/api/auth/login'));
+
+// ════════════════════════════════════════════════════════════════════════════
+//  CITIZEN ROUTES
+// ════════════════════════════════════════════════════════════════════════════
+
+// Submit a waste report (JSON body)
+router.post('/citizen/report', authMiddleware, (req, res) => {
+    const { category, location, description, imageUrl } = req.body;
+    if (!category) return res.status(400).json({ error: 'Category is required' });
+    if (!location || !location.address) return res.status(400).json({ error: 'Location is required' });
+
+    const newReport = {
+        _id: generateId(), user: req.user.id, category,
+        location, description: description || '', imageUrl: imageUrl || null,
+        status: 'pending', createdAt: new Date(), updatedAt: new Date()
+    };
+    reports.push(newReport);
+
+    // Award eco-points to citizens
+    const reporter = users.find(u => u._id === req.user.id);
+    if (reporter && reporter.role === 'citizen') {
+        reporter.ecoPoints = (reporter.ecoPoints || 0) + 10;
     }
+
+    res.status(201).json({ ...newReport, ecoPointsEarned: reporter?.role === 'citizen' ? 10 : 0 });
 });
 
-// GET /api/public/live-feed  - Last 5 activities for homepage feed
-router.get('/public/live-feed', async (req, res) => {
-    try {
-        const recentReports = await Report.find({ status: { $in: ['pending', 'assigned', 'collected'] } })
-            .sort({ createdAt: -1 })
-            .limit(5)
-            .populate('reportedBy', 'name');
-        
-        const feed = recentReports.map(r => ({
-            type: r.status === 'collected' ? 'resolved' : 'report',
-            text: r.status === 'collected'
-                ? `${r.assignedDriver ? 'Crew' : 'Team'} completed collection`
-                : `Citizen reported ${r.category} waste`,
-            location: r.location?.address || 'City Area',
-            time: r.createdAt,
-            points: r.status === 'collected' ? null : '+10 XP'
-        }));
-        
-        res.json(feed);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+// Upload image for a report (returns URL)
+router.post('/citizen/report/upload', authMiddleware, upload.single('image'), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'No image file provided' });
+    const imageUrl = `/uploads/${req.file.filename}`;
+    res.json({ imageUrl, message: 'Image uploaded successfully' });
+});
+
+// Get reports submitted by the current user
+router.get('/citizen/my-reports', authMiddleware, (req, res) => {
+    const myReports = reports
+        .filter(r => r.user === req.user.id)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    res.json(myReports);
+});
+
+// Eco-points leaderboard (top 10 citizens)
+router.get('/citizen/leaderboard', (_req, res) => {
+    const leaderboard = users
+        .filter(u => u.role === 'citizen')
+        .sort((a, b) => (b.ecoPoints || 0) - (a.ecoPoints || 0))
+        .slice(0, 10)
+        .map((u, i) => ({ rank: i + 1, name: u.name, ecoPoints: u.ecoPoints || 0 }));
+    res.json(leaderboard);
+});
+
+// Legacy alias
+router.post('/report', authMiddleware, (req, res) => res.redirect(307, '/api/citizen/report'));
+
+// ════════════════════════════════════════════════════════════════════════════
+//  ADMIN ROUTES
+// ════════════════════════════════════════════════════════════════════════════
+
+// All users (filterable by role)
+router.get('/admin/users', authMiddleware, adminMiddleware, (req, res) => {
+    let result = users.map(safeUser);
+    if (req.query.role) result = result.filter(u => u.role === req.query.role);
+    res.json(result);
+});
+
+// Update user role
+router.patch('/admin/users/:id/role', authMiddleware, adminMiddleware, (req, res) => {
+    const user = users.find(u => u._id === req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    const newRole = req.body.role;
+    if (!['admin', 'driver', 'citizen'].includes(newRole))
+        return res.status(400).json({ error: 'Invalid role' });
+    user.role = newRole;
+    res.json({ message: 'Role updated', user: safeUser(user) });
+});
+
+// Delete user
+router.delete('/admin/users/:id', authMiddleware, adminMiddleware, (req, res) => {
+    if (req.params.id === '0') return res.status(403).json({ error: 'Cannot delete the root admin' });
+    const index = users.findIndex(u => u._id === req.params.id);
+    if (index === -1) return res.status(404).json({ error: 'User not found' });
+    users.splice(index, 1);
+    res.json({ message: 'User deleted' });
+});
+
+// Drivers list
+router.get('/admin/drivers', authMiddleware, adminMiddleware, (req, res) =>
+    res.json(users.filter(u => u.role === 'driver').map(u => ({
+        _id: u._id, name: u.name, status: u.status || 'available'
+    })))
+);
+
+// Pending report count (for notification badge)
+router.get('/admin/pending-count', authMiddleware, adminMiddleware, (req, res) =>
+    res.json({ count: reports.filter(r => r.status === 'pending').length })
+);
+
+// Assign task to driver
+router.patch('/admin/assign-task/:taskId', authMiddleware, adminMiddleware, (req, res) => {
+    const report = reports.find(r => r._id === req.params.taskId);
+    if (!report) return res.status(404).json({ error: 'Report not found' });
+    if (!req.body.driverId) return res.status(400).json({ error: 'driverId is required' });
+    report.status     = 'dispatched';
+    report.assignedTo = req.body.driverId;
+    report.updatedAt  = new Date();
+    res.json(report);
+});
+
+// Full stats for admin dashboard
+router.get('/admin/stats', authMiddleware, adminMiddleware, (req, res) => {
+    // Category breakdown
+    const catMap = {};
+    reports.forEach(r => { catMap[r.category] = (catMap[r.category] || 0) + 1; });
+    const categories = Object.keys(catMap).map(k => ({ _id: k, count: catMap[k] }));
+
+    // 7-day daily trend
+    const dailyReports = [0, 0, 0, 0, 0, 0, 0];
+    const now = Date.now();
+    reports.forEach(r => {
+        const diff = Math.floor((now - new Date(r.createdAt)) / 86400000);
+        if (diff >= 0 && diff < 7) dailyReports[6 - diff]++;
+    });
+
+    const total     = reports.length || 1;
+    const collected = reports.filter(r => r.status === 'collected').length;
+    const pending   = reports.filter(r => r.status === 'pending').length;
+    const dispatched= reports.filter(r => r.status === 'dispatched').length;
+
+    res.json({
+        totalUsers:    users.filter(u => u.role === 'citizen').length,
+        totalReports:  reports.length,
+        pendingAction: pending,
+        dispatched,
+        activeDrivers: users.filter(u => u.role === 'driver').length,
+        activeFleet:   users.filter(u => u.role === 'driver' && u.status === 'active').length,
+        performance:   Math.round((collected / total) * 100),
+        categories:    categories.length ? categories : [{ _id: 'None', count: 1 }],
+        dailyReports,
+        reports:       [...reports].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 50)
+    });
+});
+
+// All reports with optional filter
+router.get('/admin/reports', authMiddleware, adminMiddleware, (req, res) => {
+    let result = [...reports].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    if (req.query.status && req.query.status !== 'all') {
+        result = result.filter(r => r.status === req.query.status);
     }
-});
-
-// ─── WASTE REPORTS ────────────────────────────────────────────────────────────
-
-// GET /api/public/leaderboard - Top contributors
-router.get('/public/leaderboard', async (req, res) => {
-    try {
-        const topUsers = await User.find({ role: 'citizen' })
-            .sort({ ecoPoints: -1 })
-            .limit(10)
-            .select('name ecoPoints stats createdAt');
-        
-        const leaderboard = topUsers.map((u, i) => ({
-            rank: i + 1,
-            name: u.name,
-            points: u.ecoPoints,
-            reports: u.stats?.totalReports || 0,
-            joined: u.createdAt
-        }));
-        
-        res.json(leaderboard);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// PUT /api/auth/profile/update - Update name/bio
-router.put('/auth/profile/update', protect, async (req, res) => {
-    try {
-        const { name } = req.body;
-        const updates = {};
-        if (name) updates.name = name;
-        const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true }).select('-password');
-        res.json(user);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// GET /api/admin/pending-count - Fast count for notification bell
-router.get('/admin/pending-count', protect, authorize('admin'), async (req, res) => {
-    try {
-        const count = await Report.countDocuments({ status: 'pending' });
-        res.json({ count });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// GET /api/admin/export-csv - Export all reports as CSV
-router.get('/admin/export-csv', protect, authorize('admin'), async (req, res) => {
-    try {
-        const reports = await Report.find().sort({ createdAt: -1 })
-            .populate('reportedBy', 'name email')
-            .populate('assignedDriver', 'name');
-
-        const rows = [
-            ['Date', 'Category', 'Status', 'Reporter', 'Driver', 'Lat', 'Lng', 'Description']
-        ];
-        reports.forEach(r => {
-            rows.push([
-                new Date(r.createdAt).toLocaleDateString(),
-                r.category,
-                r.status,
-                r.reportedBy?.name || 'Anonymous',
-                r.assignedDriver?.name || '-',
-                r.location?.coordinates?.[1] || '',
-                r.location?.coordinates?.[0] || '',
-                (r.description || '').replace(/,/g, ';')
-            ]);
-        });
-
-        const csv = rows.map(r => r.join(',')).join('\n');
-        res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', 'attachment; filename=reports.csv');
-        res.send(csv);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-
-// POST /api/report  &  /api/citizen/report
-const submitReport = async (req, res) => {
-    try {
-        const { category, lat, lng, address, description, userId } = req.body;
-        const reporterId = req.user ? req.user._id : userId;
-        if (!reporterId) return res.status(401).json({ error: 'Authentication required' });
-        if (!lat || !lng) return res.status(400).json({ error: 'Location coordinates required' });
-
-        const images = req.files ? req.files.map(f => `/uploads/${f.filename}`) : [];
-        const report = await Report.create({
-            category,
-            description: description || '',
-            location: { lat: parseFloat(lat), lng: parseFloat(lng), address: address || '' },
-            images,
-            reportedBy: reporterId
-        });
-
-        await User.findByIdAndUpdate(reporterId, { $inc: { ecoPoints: 10, 'stats.totalReports': 1 } });
-        await EcoPoint.create({ userId: reporterId, amount: 10, reason: 'Waste report submitted', reportId: report._id });
-
-        res.status(201).json(report);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
+    if (req.query.category) {
+        result = result.filter(r => r.category === req.query.category);
     }
-};
-
-router.post('/report',         protect, upload.array('images', 3), submitReport);
-router.post('/citizen/report', protect, upload.array('images', 3), submitReport);
-
-// GET /api/reports
-router.get('/reports', async (req, res) => {
-    try {
-        const reports = await Report.find().sort({ createdAt: -1 })
-            .populate('reportedBy', 'name email').populate('assignedDriver', 'name');
-        res.json(reports);
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    // Enrich with reporter name
+    result = result.map(r => {
+        const reporter = users.find(u => u._id === r.user);
+        return { ...r, reporterName: reporter ? reporter.name : 'Unknown' };
+    });
+    res.json(result);
 });
 
-// GET /api/reports/:id
-router.get('/reports/:id', async (req, res) => {
-    try {
-        const report = await Report.findById(req.params.id)
-            .populate('reportedBy', 'name email').populate('assignedDriver', 'name');
-        if (!report) return res.status(404).json({ error: 'Report not found' });
-        res.json(report);
-    } catch (err) { res.status(500).json({ error: err.message }); }
+// CSV export
+router.get('/admin/export-csv', authMiddleware, adminMiddleware, (req, res) => {
+    const header = 'Report ID,Category,Status,Location,Reporter,Date\n';
+    const rows   = reports.map(r => {
+        const reporter = users.find(u => u._id === r.user);
+        return `${r._id},${r.category},${r.status},"${r.location?.address || ''}","${reporter?.name || ''}",${new Date(r.createdAt).toISOString()}`;
+    }).join('\n');
+    res.header('Content-Type', 'text/csv');
+    res.attachment(`smartwaste_reports_${new Date().toISOString().slice(0,10)}.csv`);
+    res.send(header + rows);
 });
 
-// PUT /api/reports/:id/status  &  PATCH (legacy)
-const updateStatus = async (req, res) => {
-    try {
-        const report = await Report.findByIdAndUpdate(req.params.id, { status: req.body.status }, { new: true, runValidators: true });
-        if (!report) return res.status(404).json({ error: 'Report not found' });
-        res.json(report);
-    } catch (err) { res.status(400).json({ error: err.message }); }
-};
-router.put('/reports/:id/status',   protect, updateStatus);
-router.patch('/reports/:id/status', updateStatus);
+// ════════════════════════════════════════════════════════════════════════════
+//  DRIVER ROUTES
+// ════════════════════════════════════════════════════════════════════════════
 
-// GET /api/my-reports  &  /api/my-reports/:userId
-const getMyReports = async (req, res) => {
-    try {
-        const userId = req.params.userId || req.query.userId;
-        if (!userId) return res.status(400).json({ error: 'userId required' });
-        const reports = await Report.find({ reportedBy: userId }).sort({ createdAt: -1 });
-        res.json(reports);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-};
-router.get('/my-reports',         protect, getMyReports);
-router.get('/my-reports/:userId', protect, getMyReports);
-
-// ─── PUBLIC STATS ─────────────────────────────────────────────────────────────
-
-// GET /api/public/stats
-router.get('/public/stats', async (req, res) => {
-    try {
-        const totalUsers = await User.countDocuments();
-        const totalReports = await Report.countDocuments();
-        const collectedReports = await Report.countDocuments({ status: 'collected' });
-
-        // Calculate dynamic values
-        // Estimate 25kg average per collected report to get "Tonnes" (just a placeholder math logic)
-        const wasteCollectedTonnes = (collectedReports * 25) / 1000; 
-        
-        let recyclingEfficiency = 0;
-        if (totalReports > 0) {
-            recyclingEfficiency = Math.round((collectedReports / totalReports) * 100);
-        }
-
-        res.json({
-            wasteCollected: wasteCollectedTonnes.toFixed(1) + 't',
-            activeCitizens: (totalUsers > 1000) ? (totalUsers / 1000).toFixed(1) + 'k' : totalUsers.toString(),
-            recyclingEfficiency: recyclingEfficiency + '%'
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+// Get tasks assigned to this driver (or all pending if admin)
+router.get('/driver/tasks', authMiddleware, driverOrAdminMiddleware, (req, res) => {
+    let tasks;
+    if (req.user.role === 'admin') {
+        tasks = reports;
+    } else {
+        tasks = reports.filter(r =>
+            r.assignedTo === req.user.id || r.status === 'pending'
+        );
     }
+    tasks = tasks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    res.json(tasks);
 });
 
-// ─── ADMIN ────────────────────────────────────────────────────────────────────
-
-// GET /api/admin/reports
-router.get('/admin/reports', protect, authorize('admin'), async (req, res) => {
-    try {
-        const reports = await Report.find().sort({ createdAt: -1 })
-            .populate('reportedBy', 'name').populate('assignedDriver', 'name');
-        res.json(reports);
-    } catch (err) { res.status(500).json({ error: err.message }); }
+// Mark task as collected
+router.patch('/driver/tasks/:id/complete', authMiddleware, driverOrAdminMiddleware, (req, res) => {
+    const report = reports.find(r => r._id === req.params.id);
+    if (!report) return res.status(404).json({ error: 'Task not found' });
+    report.status    = 'collected';
+    report.updatedAt = new Date();
+    res.json(report);
 });
-
-// GET /api/admin/stats
-router.get('/admin/stats', protect, authorize('admin'), async (req, res) => {
-    try {
-        const total     = await Report.countDocuments();
-        const pending   = await Report.countDocuments({ status: 'pending' });
-        const collected = await Report.countDocuments({ status: 'collected' });
-        const assigned  = await Report.countDocuments({ status: 'assigned' });
-
-        const totalDrivers = await User.countDocuments({ role: 'driver' });
-        const activeMissions = await Report.distinct('assignedDriver', { status: { $in: ['assigned', 'in-transit'] } });
-        const activeDrivers = activeMissions.length;
-
-        const categories = await Report.aggregate([{ $group: { _id: '$category', count: { $sum: 1 } } }]);
-
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const rawDailyReports = await Report.aggregate([
-            { $match: { createdAt: { $gte: sevenDaysAgo } } },
-            { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, count: { $sum: 1 } } },
-            { $sort: { _id: 1 } }
-        ]);
-
-        const dailyReports = [];
-        for (let i = 6; i >= 0; i--) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            const dateStr = d.toISOString().split('T')[0];
-            const existing = rawDailyReports.find(r => r._id === dateStr);
-            dailyReports.push({ _id: dateStr, count: existing ? existing.count : 0 });
-        }
-
-        const performance  = total > 0 ? Math.round((collected / total) * 100) : 0;
-        const recentReports = await Report.find().limit(10).sort({ createdAt: -1 })
-            .populate('reportedBy', 'name').populate('assignedDriver', 'name');
-
-        res.json({ total, pending, collected, assigned, performance, categories, dailyReports, recentReports, totalDrivers, activeDrivers });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// GET /api/admin/drivers
-router.get('/admin/drivers', protect, authorize('admin'), async (req, res) => {
-    try {
-        const drivers = await User.find({ role: 'driver' }).select('name email ecoPoints stats');
-        
-        // Fetch current assigned tasks for drivers to enrich data
-        const driversList = [];
-        for (let d of drivers) {
-            const activeReport = await Report.findOne({ assignedDriver: d._id, status: { $in: ['assigned', 'in-transit'] } });
-            driversList.push({
-                ...d.toObject(),
-                status: activeReport ? 'On Mission' : 'Idle',
-                activeMission: activeReport ? activeReport._id : null
-            });
-        }
-        res.json(driversList);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// GET /api/admin/users
-router.get('/admin/users', protect, authorize('admin'), async (req, res) => {
-    try {
-        const users = await User.find().select('-password').sort({ createdAt: -1 });
-        res.json(users);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// PUT /api/admin/users/:id/role
-router.put('/admin/users/:id/role', protect, authorize('admin'), async (req, res) => {
-    try {
-        const { role } = req.body;
-        if (!['citizen', 'driver', 'admin'].includes(role)) {
-            return res.status(400).json({ error: 'Invalid role' });
-        }
-        const user = await User.findByIdAndUpdate(req.params.id, { role }, { new: true }).select('-password');
-        if (!user) return res.status(404).json({ error: 'User not found' });
-        res.json({ message: 'User role updated', user });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// ─── PUBLIC & AUTH ENHANCEMENTS ──────────────────────────────────────────────
-
-// GET /api/public/leaderboard
-router.get('/public/leaderboard', async (req, res) => {
-    try {
-        const users = await User.find({ role: 'citizen' })
-            .select('name ecoPoints stats')
-            .sort({ ecoPoints: -1 })
-            .limit(50);
-        
-        const leaderboard = users.map((u, i) => ({
-            rank: i + 1,
-            name: u.name,
-            points: u.ecoPoints || 0,
-            reports: (u.stats && u.stats.totalReports) || 0
-        }));
-        res.json(leaderboard);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// GET /api/auth/profile/:id
-router.get('/auth/profile/:id', protect, async (req, res) => {
-    try {
-        const user = await User.findById(req.params.id).select('-password');
-        if (!user) return res.status(404).json({ error: 'User not found' });
-        
-        // Count reports for extra stats
-        const reportCount = await Report.countDocuments({ reportedBy: user._id });
-        const userObj = user.toObject();
-        userObj.stats = { ...userObj.stats, totalReports: reportCount };
-        
-        res.json(userObj);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// PUT /api/auth/profile/update
-router.put('/auth/profile/update', protect, async (req, res) => {
-    try {
-        const { name } = req.body;
-        if (!name) return res.status(400).json({ error: 'Name is required' });
-        
-        const user = await User.findByIdAndUpdate(req.user._id, { name }, { new: true }).select('-password');
-        res.json(user);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// ─── ADMIN ENHANCEMENTS ───────────────────────────────────────────────────────
-
-// GET /api/admin/reports/export  &  /api/admin/export-csv
-const exportReports = async (req, res) => {
-    try {
-        const reports = await Report.find().sort({ createdAt: -1 })
-            .populate('reportedBy', 'name email').populate('assignedDriver', 'name');
-
-        let csv = 'ReportID,Category,Description,Status,ReportedBy,ReportedByEmail,Driver,Lat,Lng,Date\n';
-        reports.forEach(r => {
-            csv += `${r._id},${r.category},"${(r.description||'').replace(/"/g,'""')}",${r.status},${r.reportedBy?.name||''},${r.reportedBy?.email||''},${r.assignedDriver?.name||''},${r.lat},${r.lng},${r.createdAt.toISOString()}\n`;
-        });
-
-        res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', 'attachment; filename=smartwaste_reports.csv');
-        res.status(200).send(csv);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-};
-router.get('/admin/reports/export', protect, authorize('admin'), exportReports);
-router.get('/admin/export-csv',     protect, authorize('admin'), exportReports);
-
-// GET /api/admin/pending-count
-router.get('/admin/pending-count', protect, authorize('admin'), async (req, res) => {
-    try {
-        const count = await Report.countDocuments({ status: 'pending' });
-        res.json({ count });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// DELETE /api/admin/users/:id
-router.delete('/admin/users/:id', protect, authorize('admin'), async (req, res) => {
-    try {
-        const user = await User.findByIdAndDelete(req.params.id);
-        if (!user) return res.status(404).json({ error: 'User not found' });
-        res.json({ message: 'User deleted successfully' });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// POST /api/admin/assign-driver  &  /api/admin/assign-task (legacy)
-const assignDriver = async (req, res) => {
-    try {
-        const { reportId, driverId } = req.body;
-        if (!reportId || !driverId) return res.status(400).json({ error: 'reportId and driverId required' });
-        const report = await Report.findByIdAndUpdate(reportId, { status: 'assigned', assignedDriver: driverId }, { new: true });
-        if (!report) return res.status(404).json({ error: 'Report not found' });
-        res.json({ message: 'Driver assigned successfully', report });
-    } catch (err) { res.status(400).json({ error: err.message }); }
-};
-router.post('/admin/assign-driver', protect, authorize('admin'), assignDriver);
-router.post('/admin/assign-task',   protect, authorize('admin'), assignDriver);
-
-// ─── DRIVER OPERATIONS ──────────────────────────────────────────────────────────
-
-// GET /api/driver/tasks/:driverId
-router.get('/driver/tasks/:driverId', protect, authorize('driver', 'admin'), async (req, res) => {
-    try {
-        const tasks = await Report.find({
-            assignedDriver: req.params.driverId,
-            status: { $in: ['assigned', 'in-transit'] }
-        }).sort({ createdAt: 1 });
-        res.json(tasks);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// GET /api/driver/route-plan
-router.get('/driver/route-plan', protect, authorize('driver'), async (req, res) => {
-    try {
-        const tasks = await Report.find({
-            assignedDriver: req.user._id,
-            status: { $in: ['assigned', 'in-transit'] }
-        }).sort({ createdAt: 1 });
-        // In a real app, this would integrate with a routing API like Mapbox or Google Directions
-        res.json({ optimizeRoute: true, tasks });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// POST /api/driver/fuel-log
-router.post('/driver/fuel-log', protect, authorize('driver'), upload.single('receipt'), async (req, res) => {
-    try {
-        const { liters, cost, odometer, notes } = req.body;
-        const receiptImage = req.file ? `/uploads/${req.file.filename}` : null;
-        
-        const log = await FuelLog.create({
-            driverId: req.user._id,
-            liters: parseFloat(liters),
-            cost: parseFloat(cost),
-            odometer: parseInt(odometer),
-            notes: notes || '',
-            receiptImage
-        });
-        res.status(201).json(log);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// GET /api/driver/fuel-log
-router.get('/driver/fuel-log', protect, authorize('driver'), async (req, res) => {
-    try {
-        const logs = await FuelLog.find({ driverId: req.user._id }).sort({ createdAt: -1 });
-        res.json(logs);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// POST /api/driver/complete-collection
-router.post('/driver/complete-collection', protect, authorize('driver'), async (req, res) => {
-    try {
-        const { reportId } = req.body;
-        const report = await Report.findByIdAndUpdate(reportId, { status: 'collected' }, { new: true });
-        if (!report) return res.status(404).json({ error: 'Report not found' });
-        await User.findByIdAndUpdate(report.assignedDriver, { $inc: { ecoPoints: 5 } });
-        res.json({ message: 'Collection confirmed!', report });
-    } catch (err) { res.status(400).json({ error: err.message }); }
-});
-
-// ─── HEALTH CHECK ─────────────────────────────────────────────────────────────
-router.get('/health', (req, res) => res.json({ status: 'OK', timestamp: new Date() }));
 
 module.exports = router;

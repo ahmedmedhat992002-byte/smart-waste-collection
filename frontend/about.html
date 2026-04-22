@@ -1,145 +1,149 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About Us | SmartWaste</title>
-    <meta name="description"
-        content="Learn about our mission to build cleaner, smarter cities through citizen engagement.">
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>About Us | Smart Waste Platform</title>
+    <meta name="description" content="Learn about the SmartWaste mission to improve urban waste management using technology.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
 </head>
-
 <body>
-    <nav class="navbar glass-card" id="mainNav">
-        <div class="nav-container">
-            <a href="index.html" class="logo">
-                <div class="logo-icon"><i class="fas fa-recycle"></i></div>
-                <span>SMARTWASTE</span>
-            </a>
-            <div class="nav-links" id="navLinks">
-                <a href="index.html">Home</a>
-                <a href="about.html" class="active">About</a>
-                <a href="features.html">Features</a>
-                <a href="report.html">Report Issue</a>
-                <a href="leaderboard.html">Leaderboard</a>
-                <a href="contact.html">Contact</a>
-                <a href="faq.html">FAQ</a>
-                <a href="dashboard.html" style="display: none;">Admin</a>
+    <!-- Global Navigation -->
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+        <img src="assets/logo.png" alt="Smart Waste Logo">
+    </a>
+        <button class="menu-toggle">☰</button>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="about.html" class="active">About</a></li>
+            <li><a href="features.html">Features</a></li>
+            <li><a href="../dashboard.html">Dashboard</a></li>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="faq.html">FAQ</a></li>
+            <div id="authButtons" style="display:flex;align-items:center;">
+                <a href="login.html" class="btn-primary" style="padding:9px 20px;">Login / Register</a>
             </div>
-            <div class="nav-auth" id="authSection">
-                <button class="theme-toggle" onclick="toggleTheme()"><i class="fas fa-sun"></i></button>
-                <div id="authButtons">
-                    <button class="btn-premium secondary" onclick="showModal('loginModal')">Sign In</button>
-                </div>
-                <div id="userInfo" style="display: none;">
-                    <span class="points-badge"><i class="fas fa-leaf"></i> <span id="userPoints">0</span> pts</span>
-                    <a href="profile.html" id="userHandle"
-                        style="color:var(--text-white); text-decoration:none; font-weight:600;"></a>
-                    <button class="btn-icon" onclick="logout()"><i class="fas fa-sign-out-alt"></i></button>
-                </div>
+            <div id="userInfo" style="display:none;align-items:center;gap:10px;">
+                <span id="userHandle"></span>
+                <button onclick="logout()" class="btn-secondary" style="padding:8px 16px;font-size:0.85rem;font-weight:600;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:white;cursor:pointer;">Logout</button>
             </div>
-            <button class="mobile-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
-        </div>
+        </ul>
     </nav>
 
-    <main class="container animate-in" style="padding: 100px 0;">
-        <div class="section-badge">Our Journey</div>
-        <h1 class="text-gradient" style="font-size: 3.5rem; margin-bottom: 2rem;">Pioneering Smart Cities</h1>
-        <p style="font-size: 1.2rem; max-width: 800px; margin-bottom: 4rem;">We are dedicated to revolutionizing urban
-            waste management through cutting-edge technology and citizen-first initiatives.</p>
+    <!-- Header -->
+    <header class="section text-center" style="padding-top: 150px; padding-bottom: 60px;">
+        <div class="container animate">
+            <span class="badge collected" style="margin-bottom: 15px; display: inline-block;">Our Story</span>
+            <h1 style="font-size: 3rem; font-weight: 800; margin-bottom: 20px;">Pioneering Smart Cities</h1>
+            <p style="font-size: 1.1rem; max-width: 700px; margin: 0 auto;">We believe that the foundation of a modern smart city begins with sustainable, efficient, and community-driven waste management.</p>
+        </div>
+    </header>
 
-        <div class="stats-grid">
-            <div class="glass-card stat-item">
-                <h3>Our Mission</h3>
-                <div class="value" style="font-size: 1.4rem; color: var(--primary);">Improve urban waste management
-                    using AI.</div>
+    <!-- Mission and Vision -->
+    <section class="section container">
+        <div class="grid-2 reveal">
+            <div class="glass-card">
+                <h2 style="color: var(--primary); margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">🌟 Our Mission</h2>
+                <p>Improve urban waste management using advanced technology, empowering municipalities to optimize routes, reduce costs, and ultimately better serve their communities.</p>
             </div>
-            <div class="glass-card stat-item">
-                <h3>Our Vision</h3>
-                <div class="value" style="font-size: 1.4rem; color: var(--secondary);">Smart, sustainable cities powered
-                    by data.</div>
+            <div class="glass-card">
+                <h2 style="color: var(--primary); margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">👁️ Our Vision</h2>
+                <p>Envisioning smart, sustainable cities powered by data where citizen engagement and environmental responsibility go hand-in-hand to eliminate urban waste issues.</p>
             </div>
         </div>
+    </section>
 
-        <section style="margin-top: 80px;">
-            <h2 class="text-gradient">The Innovation Team</h2>
-            <div class="features-grid" style="margin-top: 40px;">
-                <div class="glass-card">
-                    <div style="font-size: 3rem; margin-bottom: 1rem;">👨‍💻</div>
-                    <h3>Eman</h3>
-                    <p style="color: var(--primary);">Head of Engineering</p>
+    <!-- System Architecture Simple Diagram -->
+    <section class="section container">
+        <div class="text-center reveal" style="margin-bottom: 50px;">
+            <h2>System Architecture</h2>
+            <p>How the SmartWaste platform connects citizens, drivers, and administrators.</p>
+        </div>
+        <div class="glass-card reveal text-center" style="padding: 50px 20px;">
+            <div class="grid-3" style="align-items: center; gap: 20px;">
+                <div style="padding: 20px; border: 1px dashed var(--primary); border-radius: 12px; background: rgba(16, 185, 129, 0.05);">
+                    <h3 style="color: var(--primary); margin-bottom: 10px;">1. Citizens</h3>
+                    <p style="font-size: 0.9rem;">Report issues, earn eco-points, and view neighborhood stats.</p>
                 </div>
-                <div class="glass-card">
-                    <div style="font-size: 3rem; margin-bottom: 1rem;">👩‍🎨</div>
-                    <h3>Huda</h3>
-                    <p style="color: var(--secondary);">Lead UX Architect</p>
+                <!-- Desktop arrow (hidden on mobile via CSS if needed, but flex wrap handles it somewhat) -->
+                <div style="font-size: 2rem; color: var(--text-muted);">➜</div>
+                <div style="padding: 20px; border: 1px dashed var(--secondary); border-radius: 12px; background: rgba(59, 130, 246, 0.05);">
+                    <h3 style="color: var(--secondary); margin-bottom: 10px;">2. Cloud Dashboard</h3>
+                    <p style="font-size: 0.9rem;">Admins monitor real-time data and system automatically optimizes routes.</p>
                 </div>
-                <div class="glass-card">
-                    <div style="font-size: 3rem; margin-bottom: 1rem;">🌍</div>
-                    <h3>Christine</h3>
-                    <p style="color: var(--accent);">Sustainability Director</p>
+                <div style="font-size: 2rem; color: var(--text-muted); display: none;">➜</div>
+                <div style="padding: 20px; border: 1px dashed var(--accent); border-radius: 12px; background: rgba(245, 158, 11, 0.05);">
+                    <h3 style="color: var(--accent); margin-bottom: 10px;">3. Drivers</h3>
+                    <p style="font-size: 0.9rem;">Receive optimized tasks and update collection status instantly via mobile app.</p>
                 </div>
-            </div>
-        </section>
-    </main>
-
-    <footer class="footer-main">
-        <div class="container footer-grid">
-            <div class="footer-col footer-about">
-                <a href="index.html" class="logo" style="margin-bottom: 1.5rem;">
-                    <div class="logo-icon"><i class="fas fa-recycle"></i></div>
-                    <span>SMARTWASTE</span>
-                </a>
-                <p>Building cleaner, smarter cities through citizen engagement and real-time data analytics.</p>
-                <div class="social-links">
-                    <a href="#"><i class="fab fa-twitter"></i></a>
-                    <a href="#"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#"><i class="fab fa-instagram"></i></a>
-                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                </div>
-            </div>
-
-            <div class="footer-col">
-                <h4>Platform</h4>
-                <ul class="footer-links">
-                    <li><a href="features.html">Features</a></li>
-                    <li><a href="leaderboard.html">Leaderboard</a></li>
-                    <li><a href="report.html">Report Issue</a></li>
-                    <li><a href="tips.html">Eco-Tips</a></li>
-                </ul>
-            </div>
-
-            <div class="footer-col">
-                <h4>Support</h4>
-                <ul class="footer-links">
-                    <li><a href="faq.html">FAQ</a></li>
-                    <li><a href="contact.html">Contact Us</a></li>
-                    <li><a href="about.html">About Us</a></li>
-                    <li><a href="#">Privacy Policy</a></li>
-                </ul>
-            </div>
-
-            <div class="footer-col">
-                <h4>Stay Green</h4>
-                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Join our newsletter for
-                    weekly sustainability updates.</p>
-                <form onsubmit="event.preventDefault(); showToast('Subscribed!', 'success');"
-                    style="display: flex; gap: 0.5rem;">
-                    <input type="email" placeholder="Email" required
-                        style="padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white; flex: 1; font-size: 0.85rem;">
-                    <button type="submit" class="btn-premium" style="padding: 10px 15px;"><i
-                            class="fas fa-paper-plane"></i></button>
-                </form>
             </div>
         </div>
-        <div class="footer-bottom">
-            <p>&copy; 2026 SmartWaste Sustainability. Built for a better tomorrow.</p>
+    </section>
+
+    <!-- Team Section -->
+    <section class="section container text-center">
+        <div class="reveal" style="margin-bottom: 50px;">
+            <h2>Meet the Innovation Team</h2>
+            <p>Passionate engineers and urban planners dedicated to building a greener future.</p>
+        </div>
+        <div class="grid-3 reveal">
+            <div class="glass-card" style="padding: 20px;">
+                <div style="width: 80px; height: 80px; background: var(--primary); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 2rem;">👤</div>
+                <h4 style="margin-bottom: 5px;">Huda</h4>
+                <p style="font-size: 0.85rem; color: var(--primary);">CEO &amp; Founder</p>
+            </div>
+            <div class="glass-card" style="padding: 20px;">
+                <div style="width: 80px; height: 80px; background: var(--secondary); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 2rem;">👩‍💻</div>
+                <h4 style="margin-bottom: 5px;">Eman</h4>
+                <p style="font-size: 0.85rem; color: var(--secondary);">Lead Developer</p>
+            </div>
+            <div class="glass-card" style="padding: 20px;">
+                <div style="width: 80px; height: 80px; background: var(--accent); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 2rem;">🧑‍🎨</div>
+                <h4 style="margin-bottom: 5px;">Christine</h4>
+                <p style="font-size: 0.85rem; color: var(--accent);">UI/UX Designer</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Global Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-top">
+                <div class="footer-col" style="grid-column: span 2 / auto;">
+                    <a href="index.html" class="logo">
+        <img src="assets/logo.png" alt="Smart Waste Logo">
+    </a>
+                    <p style="max-width: 300px;">Transforming urban living with sustainable, data-driven waste management systems.</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Platform</h4>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="about.html">About Us</a></li>
+                        <li><a href="features.html">Features</a></li>
+                        <li><a href="dashboard.html">Dashboard</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="contact.html">Contact Us</a></li>
+                        <li><a href="faq.html">FAQ</a></li>
+                        <li><a href="privacy.html">Privacy Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 SmartWaste System. All rights reserved.</p>
+            </div>
         </div>
     </footer>
 
-    <script src="js/app.js"></script>
+    <script src="../js/app.js"></script>
+<script src="../js/chatbot.js"></script>
 </body>
-
 </html>

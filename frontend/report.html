@@ -3,154 +3,434 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Report Waste | SmartWaste Sustainability</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Leaflet Maps (Free/Open Source) -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <title>Report Waste | Smart Waste Platform</title>
+    <meta name="description" content="Report a waste issue in your city and earn Eco-Points.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        .report-layout {
+            display: grid; grid-template-columns: 1fr 420px; gap: 28px;
+            align-items: start; max-width: 980px; margin: 0 auto;
+        }
+        @media (max-width: 900px) { .report-layout { grid-template-columns: 1fr; } }
+
+        .steps { display:flex; gap:8px; margin-bottom:24px; }
+        .step {
+            flex:1; text-align:center; padding:10px 8px;
+            border-radius:10px; font-size:0.78rem; font-weight:600;
+            background:rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+            color:#64748b; transition:all 0.3s;
+        }
+        .step.active   { background:rgba(16,185,129,0.12); color:#10b981; border-color:rgba(16,185,129,0.3); }
+        .step.complete { background:rgba(16,185,129,0.06); color:#059669; }
+
+        .category-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+        .category-btn {
+            padding:14px; border-radius:12px; cursor:pointer; text-align:center;
+            border: 2px solid rgba(255,255,255,0.07);
+            background:rgba(255,255,255,0.03); transition:all 0.2s; font-family:inherit;
+            color: var(--text-soft);
+        }
+        .category-btn .icon { font-size:1.6rem; display:block; margin-bottom:6px; }
+        .category-btn .name { font-size:0.82rem; font-weight:600; }
+        .category-btn:hover   { border-color:rgba(16,185,129,0.4); background:rgba(16,185,129,0.05); color:white; }
+        .category-btn.selected { border-color:#10b981; background:rgba(16,185,129,0.1); color:#10b981; }
+
+        .auth-guard {
+            background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.25);
+            border-radius:var(--radius-md); padding:20px; text-align:center;
+            margin-bottom:20px; display:none;
+        }
+        .auth-guard.show { display:block; }
+
+        .sidebar-info .glass-card { margin-bottom:16px; }
+        .eco-preview {
+            text-align:center; padding:20px;
+            background:rgba(16,185,129,0.06); border-radius:12px;
+            border:1px solid rgba(16,185,129,0.15); margin-bottom:16px;
+        }
+        .eco-preview .pts { font-size:2.2rem; font-weight:800; color:#10b981; }
+    </style>
 </head>
 <body>
-    <nav class="navbar glass-card">
-        <div class="nav-container">
-            <a href="index.html" class="logo">
-                <div class="logo-icon"><i class="fas fa-recycle"></i></div>
-                <span>SMARTWASTE</span>
-            </a>
-            <div class="nav-links">
-                <a href="index.html">Home</a>
-                <a href="about.html">About</a>
-                <a href="features.html">Features</a>
-                <a href="report.html" class="active">Report Issue</a>
-                <a href="leaderboard.html">Leaderboard</a>
-                <a href="contact.html">Contact</a>
-                <a href="faq.html">FAQ</a>
-            </div>
-            <div id="userInfo" class="points-badge">
-                <i class="fas fa-leaf"></i> <span id="userPoints">0</span> pts
-            </div>
+
+<!-- Navbar -->
+<nav class="navbar">
+    <a href="index.html" class="logo">
+        <img src="assets/logo.png" alt="Smart Waste Logo">
+    </a>
+    <button class="menu-toggle">☰</button>
+    <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="features.html">Features</a></li>
+        <li><a href="../dashboard.html">Dashboard</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <div id="authButtons" style="display:flex;align-items:center;">
+            <a href="login.html" class="btn-primary" style="padding:9px 20px;">Login</a>
         </div>
-    </nav>
+        <div id="userInfo" style="display:none;align-items:center;gap:10px;">
+            <span id="userHandle"></span>
+            <button onclick="logout()" class="btn-secondary" style="padding:8px 16px;font-size:0.85rem;font-weight:600;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:white;cursor:pointer;">Logout</button>
+        </div>
+    </ul>
+</nav>
 
-    <main class="container" style="padding: 4rem 5%;">
-        <header style="text-align: center; margin-bottom: 4rem;" class="animate-in">
-            <span class="badge-eco">Action for Cleaner Cities</span>
-            <h1 style="font-size: 3rem; margin-top: 1rem;">New <span class="text-gradient">Incident Report</span></h1>
-            <p style="color: var(--text-muted); max-width: 600px; margin: 1.5rem auto;">Submit waste sightings for immediate municipal response. Your contribution helps us optimize city cleanup efforts.</p>
-        </header>
+<div class="container" style="padding-top:calc(var(--nav-height) + 40px); padding-bottom:80px;">
+    <div class="text-center animate" style="margin-bottom:36px;">
+        <span class="badge badge-primary" style="margin-bottom:12px;display:inline-block;">🌿 Earn Eco-Points</span>
+        <h1>Report a Waste Issue</h1>
+        <p style="max-width:500px;margin:0 auto;">
+            Help keep Cairo clean — each verified report earns you <strong style="color:#10b981;">+10 Eco-Points</strong>.
+        </p>
+    </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem;">
-            <div class="glass-card animate-in">
-                <form id="reportForm">
-                    <div class="form-group">
-                        <label>Waste Category</label>
-                        <select id="category" required>
-                            <option value="plastic">Plastic Contamination</option>
-                            <option value="paper">Paper & Cardboard</option>
-                            <option value="metal">Scrap Metal</option>
-                            <option value="mixed">Mixed/General Waste</option>
-                        </select>
-                    </div>
+    <!-- Auth guard banner -->
+    <div class="auth-guard" id="authGuard">
+        <div style="font-size:1.8rem;margin-bottom:10px;">🔐</div>
+        <h3 style="margin-bottom:8px;">Login Required</h3>
+        <p style="margin-bottom:16px;">You need to be logged in to submit a waste report.</p>
+        <a href="login.html?next=report" class="btn-primary">Sign In / Register</a>
+    </div>
 
-                    <div class="form-group">
-                        <label>Description</label>
-                        <textarea id="description" rows="4" style="width:100%; padding:12px; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:12px; color:white; outline:none;" placeholder="Provide details for the collection crew..."></textarea>
-                    </div>
+    <div class="report-layout" id="reportLayout">
+        <!-- FORM COLUMN -->
+        <div>
+            <!-- Steps -->
+            <div class="steps" id="formSteps">
+                <div class="step active" id="step1">1. Category</div>
+                <div class="step"        id="step2">2. Location</div>
+                <div class="step"        id="step3">3. Details</div>
+                <div class="step"        id="step4">4. Submit</div>
+            </div>
 
-                    <div class="form-group">
-                        <label>Visual Evidence</label>
-                        <div id="imagePreview" style="width: 100%; height: 200px; border: 2px dashed var(--glass-border); border-radius: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s;" onclick="document.getElementById('imageInput').click()">
-                            <i class="fas fa-cloud-arrow-up fa-2x" style="color: var(--primary); margin-bottom: 1rem;"></i>
-                            <span style="color: var(--text-muted);">Click to upload or capture photo</span>
-                        </div>
-                        <input type="file" id="imageInput" accept="image/*" style="display: none;">
-                    </div>
-
-                    <div style="margin-bottom: 2rem;">
-                        <button type="button" id="getLocation" class="btn-premium secondary w-full">
-                            <i class="fas fa-location-crosshairs"></i> Detect Incident Geolocation
+            <form id="reportForm" class="animate">
+                <!-- Step 1: Category -->
+                <div class="glass-card no-hover" id="stepCard1">
+                    <h3 style="margin-bottom:16px;">What type of waste?</h3>
+                    <div class="category-grid">
+                        <button type="button" class="category-btn" data-value="Plastics" onclick="selectCategory(this)">
+                            <span class="icon">🧴</span><span class="name">Plastics</span>
                         </button>
-                        <p id="locationStatus" style="font-size: 0.8rem; text-align: center; margin-top: 8px; color: var(--primary);"></p>
+                        <button type="button" class="category-btn" data-value="Organic" onclick="selectCategory(this)">
+                            <span class="icon">🍂</span><span class="name">Organic</span>
+                        </button>
+                        <button type="button" class="category-btn" data-value="Metal" onclick="selectCategory(this)">
+                            <span class="icon">🔩</span><span class="name">Metal</span>
+                        </button>
+                        <button type="button" class="category-btn" data-value="Glass" onclick="selectCategory(this)">
+                            <span class="icon">🪟</span><span class="name">Glass</span>
+                        </button>
+                        <button type="button" class="category-btn" data-value="Hazardous" onclick="selectCategory(this)">
+                            <span class="icon">⚠️</span><span class="name">Hazardous</span>
+                        </button>
+                        <button type="button" class="category-btn" data-value="Electronic" onclick="selectCategory(this)">
+                            <span class="icon">📱</span><span class="name">Electronic</span>
+                        </button>
+                    </div>
+                    <input type="hidden" id="catValue" required>
+                    <div class="form-error" id="catErr" style="margin-top:10px;">Please select a waste category</div>
+                </div>
+
+                <!-- Step 2: Location -->
+                <div class="glass-card no-hover" id="stepCard2" style="margin-top:16px;">
+                    <h3 style="margin-bottom:16px;">Where is it located?</h3>
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label for="locAddress">Address / Description</label>
+                        <div style="display:flex;gap:10px;">
+                            <input type="text" id="locAddress" class="form-control" placeholder="e.g. 14 Tahrir Square, near the fountain" required>
+                            <button type="button" class="btn-primary btn-sm" onclick="getGPS()" id="gpsBtn" title="Use my GPS location" style="white-space:nowrap;padding:0 14px;">
+                                📍 GPS
+                            </button>
+                        </div>
+                        <div class="form-error" id="locErr">Location is required</div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Details + Image -->
+                <div class="glass-card no-hover" id="stepCard3" style="margin-top:16px;">
+                    <h3 style="margin-bottom:16px;">Details & Photo</h3>
+                    <div class="form-group">
+                        <label for="descText">Description <span style="color:#64748b;">(optional)</span></label>
+                        <textarea id="descText" class="form-control" rows="3" placeholder="Any details that will help our drivers find and collect the waste..."></textarea>
                     </div>
 
-                    <button type="submit" class="btn-premium w-full" style="padding: 18px;">Transmit Live Report</button>
-                </form>
-            </div>
+                    <!-- Image upload -->
+                    <div class="form-group">
+                        <label>Photo Evidence <span style="color:#64748b;">(optional — AI will classify)</span></label>
+                        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('imageInput').click()">
+                            <div id="uploadPrompt">
+                                <div style="font-size:2rem;margin-bottom:8px;">📷</div>
+                                <p style="margin:0;font-size:0.88rem;">Click to upload or drag & drop</p>
+                                <p style="margin:4px 0 0;font-size:0.78rem;color:#64748b;">JPG, PNG, WEBP — Max 5MB</p>
+                            </div>
+                            <img id="imagePreview" class="upload-preview" alt="Preview">
+                            <input type="file" id="imageInput" accept="image/*" onchange="handleImageSelect(this)">
+                        </div>
 
-            <div style="display: flex; flex-direction: column; gap: 2rem;">
-                <div class="glass-card animate-in" style="padding: 0; overflow: hidden; height: 350px; animation-delay: 0.2s;">
-                    <div id="map" style="height: 100%; background: rgba(255,255,255,0.02); display: flex; align-items: center; justify-content: center; color: var(--text-dim);">
-                        <span><i class="fas fa-map-marked-alt"></i> Interactive Map Loading...</span>
+                        <!-- AI classification result -->
+                        <div class="ai-result" id="aiResult">
+                            <div class="ai-label">🤖 AI Classification Result</div>
+                            <div id="aiResultText" style="font-size:0.88rem;"></div>
+                        </div>
                     </div>
                 </div>
-                <div class="glass-card animate-in" style="animation-delay: 0.3s; border-left: 4px solid var(--primary);">
-                    <h3 style="margin-bottom: 1rem;"><i class="fas fa-shield-halved" style="color: var(--primary);"></i> Submission Protocol</h3>
-                    <ul style="color: var(--text-muted); list-style: none; font-size: 0.95rem; display: flex; flex-direction: column; gap: 12px;">
-                        <li style="display: flex; gap: 10px;"><i class="fas fa-check-circle" style="color: var(--primary);"></i> Real-time encrypted data transmission.</li>
-                        <li style="display: flex; gap: 10px;"><i class="fas fa-check-circle" style="color: var(--primary);"></i> Automatic crew dispatch algorithm trigger.</li>
-                        <li style="display: flex; gap: 10px;"><i class="fas fa-check-circle" style="color: var(--primary);"></i> Immediate Eco-Reward point allocation.</li>
-                    </ul>
+
+                <!-- Submit -->
+                <button type="submit" class="btn-primary btn-full" id="submitBtn" style="margin-top:16px;padding:16px;font-size:1rem;">
+                    <i class="fas fa-paper-plane"></i> Submit Report & Earn +10 Eco-Points
+                </button>
+            </form>
+        </div>
+
+        <!-- SIDEBAR INFO -->
+        <div class="sidebar-info">
+            <div class="eco-preview glass-card no-hover">
+                <div style="font-size:1.5rem;margin-bottom:6px;">🌿</div>
+                <div class="pts" id="currentPoints">0</div>
+                <div style="font-size:0.82rem;color:#64748b;margin-top:4px;">Your Eco-Points</div>
+            </div>
+
+            <div class="glass-card no-hover">
+                <h3 style="font-size:0.95rem;margin-bottom:12px;">📊 How It Works</h3>
+                <div style="display:flex;flex-direction:column;gap:12px;">
+                    <div style="display:flex;gap:12px;align-items:flex-start;">
+                        <span style="background:rgba(16,185,129,0.1);color:#10b981;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">1</span>
+                        <div><strong style="font-size:0.88rem;">Select waste type</strong><br><span style="font-size:0.82rem;color:#64748b;">Choose the most accurate category</span></div>
+                    </div>
+                    <div style="display:flex;gap:12px;align-items:flex-start;">
+                        <span style="background:rgba(16,185,129,0.1);color:#10b981;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">2</span>
+                        <div><strong style="font-size:0.88rem;">Add location</strong><br><span style="font-size:0.82rem;color:#64748b;">Use GPS or type the address</span></div>
+                    </div>
+                    <div style="display:flex;gap:12px;align-items:flex-start;">
+                        <span style="background:rgba(16,185,129,0.1);color:#10b981;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">3</span>
+                        <div><strong style="font-size:0.88rem;">Submit & earn</strong><br><span style="font-size:0.82rem;color:#64748b;">+10 Eco-Points credited instantly</span></div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </main>
 
-
-    <footer class="footer-main">
-        <div class="container footer-grid">
-            <div class="footer-col footer-about">
-                <a href="index.html" class="logo" style="margin-bottom: 1.5rem;">
-                    <div class="logo-icon"><i class="fas fa-recycle"></i></div>
-                    <span>SMARTWASTE</span>
-                </a>
-                <p>Building cleaner, smarter cities through citizen engagement and real-time data analytics.</p>
-                <div class="social-links">
-                    <a href="#"><i class="fab fa-twitter"></i></a>
-                    <a href="#"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#"><i class="fab fa-instagram"></i></a>
-                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                </div>
-            </div>
-
-            <div class="footer-col">
-                <h4>Platform</h4>
-                <ul class="footer-links">
-                    <li><a href="features.html">Features</a></li>
-                    <li><a href="leaderboard.html">Leaderboard</a></li>
-                    <li><a href="report.html">Report Issue</a></li>
-                    <li><a href="tips.html">Eco-Tips</a></li>
-                </ul>
-            </div>
-
-            <div class="footer-col">
-                <h4>Support</h4>
-                <ul class="footer-links">
-                    <li><a href="faq.html">FAQ</a></li>
-                    <li><a href="contact.html">Contact Us</a></li>
-                    <li><a href="about.html">About Us</a></li>
-                    <li><a href="#">Privacy Policy</a></li>
-                </ul>
-            </div>
-
-            <div class="footer-col">
-                <h4>Stay Green</h4>
-                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Join our newsletter for weekly sustainability updates.</p>
-                <form onsubmit="event.preventDefault(); showToast('Subscribed!', 'success');" style="display: flex; gap: 0.5rem;">
-                    <input type="email" placeholder="Email" required style="padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white; flex: 1; font-size: 0.85rem;">
-                    <button type="submit" class="btn-premium" style="padding: 10px 15px;"><i class="fas fa-paper-plane"></i></button>
-                </form>
+            <div class="glass-card no-hover">
+                <h3 style="font-size:0.95rem;margin-bottom:10px;">🏆 Leaderboard</h3>
+                <div id="leaderboard" style="font-size:0.83rem;color:#64748b;">Loading…</div>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Footer (minimal) -->
+<footer class="footer" style="margin-top:0;">
+    <div class="container">
         <div class="footer-bottom">
-            <p>&copy; 2026 SmartWaste Sustainability. Built for a better tomorrow.</p>
+            <p>© 2026 SmartWaste System. All rights reserved.</p>
         </div>
-    </footer>
+    </div>
+</footer>
 
-    <script src="js/app.js"></script>
-    <script src="js/map.js"></script>
-    <script>
-        // Start Leaflet Map for reporting
-        window.addEventListener('DOMContentLoaded', () => initReportMap());
-    </script>
+<script src="../js/app.js"></script>
+<script>
+    let curLat = 0, curLng = 0, selectedCategory = '', selectedImageFile = null;
+    const AI_CATEGORIES = ['Plastics', 'Organic', 'Metal', 'Glass', 'Hazardous', 'Electronic'];
+
+    // ── Auth check ───────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        const user = getUser();
+        const guard  = document.getElementById('authGuard');
+        const layout = document.getElementById('reportLayout');
+
+        if (!user || !user.name) {
+            guard.classList.add('show');
+            layout.style.opacity = '0.3';
+            layout.style.pointerEvents = 'none';
+        } else {
+            // Show current eco-points
+            const pts = document.getElementById('currentPoints');
+            if (pts && user.ecoPoints !== undefined) pts.textContent = user.ecoPoints;
+        }
+
+        loadLeaderboard();
+    });
+
+    async function loadLeaderboard() {
+        try {
+            const res  = await fetch(`${API_URL}/citizen/leaderboard`);
+            const data = await res.json();
+            const el   = document.getElementById('leaderboard');
+            el.innerHTML = data.slice(0,5).map((u, i) => `
+                <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+                    <span>${['🥇','🥈','🥉','4️⃣','5️⃣'][i]} ${u.name}</span>
+                    <span style="color:#10b981;font-weight:700;">${u.ecoPoints} pts</span>
+                </div>
+            `).join('');
+        } catch { document.getElementById('leaderboard').textContent = 'Leaderboard unavailable'; }
+    }
+
+    // ── Category selection ────────────────────────────────────────────────────
+    function selectCategory(btn) {
+        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedCategory = btn.getAttribute('data-value');
+        document.getElementById('catValue').value = selectedCategory;
+        document.getElementById('catErr').classList.remove('show');
+    }
+
+    // ── GPS ───────────────────────────────────────────────────────────────────
+    function getGPS() {
+        if (!navigator.geolocation) { showToast('GPS not supported', 'error'); return; }
+        const btn = document.getElementById('gpsBtn');
+        btn.innerHTML = '<span class="spinner"></span>';
+        btn.disabled  = true;
+        navigator.geolocation.getCurrentPosition(
+            pos => {
+                curLat = pos.coords.latitude;
+                curLng = pos.coords.longitude;
+                document.getElementById('locAddress').value = `${curLat.toFixed(5)}, ${curLng.toFixed(5)}`;
+                showToast('📍 GPS location locked!', 'success');
+                btn.innerHTML = '📍 GPS'; btn.disabled = false;
+            },
+            () => {
+                showToast('GPS denied — type address manually', 'error');
+                btn.innerHTML = '📍 GPS'; btn.disabled = false;
+            }
+        );
+    }
+
+    // ── Image upload + AI simulation ──────────────────────────────────────────
+    function handleImageSelect(input) {
+        const file = input.files[0];
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) { showToast('Image too large (max 5MB)', 'error'); return; }
+
+        selectedImageFile = file;
+        const reader = new FileReader();
+        reader.onload = e => {
+            const preview = document.getElementById('imagePreview');
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+            document.getElementById('uploadPrompt').style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+
+        // AI simulation
+        setTimeout(() => runAIClassifier(), 700);
+    }
+
+    function runAIClassifier() {
+        const categories = AI_CATEGORIES;
+        const detected   = categories[Math.floor(Math.random() * categories.length)];
+        const confidence = (75 + Math.random() * 20).toFixed(1);
+        const emoji      = { Plastics:'🧴', Organic:'🍂', Metal:'🔩', Glass:'🪟', Hazardous:'⚠️', Electronic:'📱' };
+
+        const resultEl = document.getElementById('aiResult');
+        const textEl   = document.getElementById('aiResultText');
+        textEl.innerHTML = `
+            ${emoji[detected]||'?'} <strong>Detected: ${detected}</strong> &nbsp;
+            <span style="color:#64748b;">(${confidence}% confidence)</span><br>
+            <small style="color:#64748b;">Auto-selecting category…</small>
+        `;
+        resultEl.classList.add('show');
+
+        // Auto-select the detected category
+        const catBtn = document.querySelector(`.category-btn[data-value="${detected}"]`);
+        if (catBtn) { selectCategory(catBtn); showToast(`🤖 AI detected: ${detected}`, 'success'); }
+    }
+
+    // Drag-drop support
+    const zone = document.getElementById('uploadZone');
+    zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => {
+        e.preventDefault(); zone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            const fakeInput = { files: [file] };
+            handleImageSelect(fakeInput);
+        }
+    });
+
+    // ── Form submit ───────────────────────────────────────────────────────────
+    document.getElementById('reportForm').addEventListener('submit', async e => {
+        e.preventDefault();
+
+        const token = localStorage.getItem('token');
+        if (!token) {
+            document.getElementById('authGuard').classList.add('show');
+            showToast('Please log in first', 'error');
+            return;
+        }
+
+        // Validate
+        let valid = true;
+        if (!selectedCategory) {
+            document.getElementById('catErr').classList.add('show'); valid = false;
+        }
+        const address = document.getElementById('locAddress').value.trim();
+        if (!address) {
+            document.getElementById('locErr').classList.add('show'); valid = false;
+        } else {
+            document.getElementById('locErr').classList.remove('show');
+        }
+        if (!valid) { showToast('Please fill all required fields', 'error'); return; }
+
+        const btn = document.getElementById('submitBtn');
+        btn.innerHTML = '<span class="spinner"></span>Submitting…';
+        btn.disabled  = true;
+
+        try {
+            // Upload image first if selected
+            let imageUrl = null;
+            if (selectedImageFile) {
+                const fd  = new FormData();
+                fd.append('image', selectedImageFile);
+                const upRes = await fetchWithAuth(`${API_URL}/citizen/report/upload`, {
+                    method: 'POST', body: fd
+                });
+                if (upRes.ok) {
+                    const upData = await upRes.json();
+                    imageUrl = upData.imageUrl;
+                }
+            }
+
+            // Submit report
+            const res = await fetchWithAuth(`${API_URL}/citizen/report`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    category:    selectedCategory,
+                    location:    { lat: curLat, lng: curLng, address },
+                    description: document.getElementById('descText').value.trim(),
+                    imageUrl
+                })
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                // Update local eco-points
+                const user = getUser();
+                const newPoints = (user.ecoPoints || 0) + (data.ecoPointsEarned || 10);
+                refreshEcoPoints(newPoints);
+                document.getElementById('currentPoints').textContent = newPoints;
+
+                showToast('✅ Report submitted! +10 Eco-Points earned 🌿', 'success');
+                document.getElementById('reportForm').reset();
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('selected'));
+                document.getElementById('imagePreview').style.display = 'none';
+                document.getElementById('uploadPrompt').style.display = 'block';
+                document.getElementById('aiResult').classList.remove('show');
+                selectedCategory = ''; selectedImageFile = null; curLat = 0; curLng = 0;
+            } else {
+                showToast(data.error || 'Failed to submit report', 'error');
+            }
+        } catch {
+            showToast('Cannot connect to server', 'error');
+        } finally {
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Report & Earn +10 Eco-Points';
+            btn.disabled  = false;
+        }
+    });
+</script>
+<script src="../js/chatbot.js"></script>
 </body>
 </html>

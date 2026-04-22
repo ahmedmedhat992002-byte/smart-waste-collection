@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management | Smart Waste Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <div class="sidebar-logo-icon">🌿</div>
+            <div class="sidebar-logo-text">Smart<span>Waste</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/dashboard.html"       class="nav-link"><i class="fas fa-chart-pie"></i> Overview</a>
+            <a href="users.html"            class="nav-link active"><i class="fas fa-users-gear"></i> Users</a>
+            <a href="/frontend/index.html"  class="nav-link"><i class="fas fa-globe"></i> Public Site</a>
+            <a href="/frontend/report.html" class="nav-link"><i class="fas fa-triangle-exclamation"></i> Reports</a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="#" class="nav-link danger" onclick="logout(); return false;">
+                <i class="fas fa-right-from-bracket"></i> Sign Out
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main-content">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px;">
+            <div>
+                <h1 style="font-size:1.6rem;margin:0;">User Management</h1>
+                <p style="margin:4px 0 0;color:#64748b;font-size:0.88rem;">Manage all platform users, roles, and eco-points</p>
+            </div>
+            <div class="search-box">
+                <i class="fas fa-search" style="color:#64748b;font-size:0.85rem;"></i>
+                <input type="text" id="searchInput" placeholder="Search by name or email…" oninput="filterUsers()">
+            </div>
+        </div>
+
+        <div class="glass-card no-hover">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Eco Points</th>
+                            <th>Joined</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <tr><td colspan="6" style="text-align:center;padding:40px;color:#64748b;">Loading users…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal-box">
+        <div style="font-size:2.5rem;margin-bottom:12px;">🗑️</div>
+        <h3>Delete User?</h3>
+        <p id="modalUserName">Are you sure?</p>
+        <div class="modal-actions">
+            <button class="btn-danger" onclick="confirmDelete()" style="flex:1;padding:12px;">Delete</button>
+            <button class="btn-secondary" onclick="closeModal()" style="flex:1;display:flex;align-items:center;justify-content:center;padding:12px;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;font-size:0.9rem;">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script src="../js/app.js"></script>
+<script>
+    let allUsers = [], pendingDeleteId = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Admin guard
+        const role = localStorage.getItem('role');
+        if (role !== 'admin') {
+            window.location.href = '/frontend/login.html';
+            return;
+        }
+        loadUsers();
+    });
+
+    async function loadUsers() {
+        try {
+            const res = await fetchWithAuth(`${API_URL}/admin/users`);
+            if (!res.ok) throw new Error('Unauthorized');
+            allUsers = await res.json();
+            renderUsers(allUsers);
+        } catch {
+            document.getElementById('usersTableBody').innerHTML =
+                `<tr><td colspan="6" style="text-align:center;padding:40px;color:#ef4444;">⚠️ Could not load users. Make sure you are logged in as admin.</td></tr>`;
+        }
+    }
+
+    function renderUsers(users) {
+        const tbody = document.getElementById('usersTableBody');
+        if (!users.length) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#64748b;">No users found.</td></tr>`;
+            return;
+        }
+
+        const roleBadge = r => {
+            const m = { admin:'badge-purple', driver:'badge-warning', citizen:'badge-primary' };
+            return `<span class="badge ${m[r]||'badge-primary'}">${r}</span>`;
+        };
+
+        tbody.innerHTML = users.map(u => `
+            <tr id="row-${u._id}">
+                <td>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=1e293b&color=94a3b8&size=32&bold=true"
+                             style="width:32px;height:32px;border-radius:50%;flex-shrink:0;">
+                        <span style="font-weight:600;">${escapeHtml(u.name)}</span>
+                    </div>
+                </td>
+                <td style="color:#94a3b8;font-size:0.87rem;">${escapeHtml(u.email)}</td>
+                <td>${roleBadge(u.role)}</td>
+                <td><span class="eco-badge">🌿 ${u.ecoPoints || 0}</span></td>
+                <td style="color:#64748b;font-size:0.83rem;">${formatDate(u.createdAt)}</td>
+                <td>
+                    <button class="btn-danger" onclick="openDeleteModal('${u._id}', '${escapeAttr(u.name)}')">
+                        🗑 Delete
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function filterUsers() {
+        const q = document.getElementById('searchInput').value.toLowerCase();
+        renderUsers(allUsers.filter(u =>
+            (u.name  || '').toLowerCase().includes(q) ||
+            (u.email || '').toLowerCase().includes(q)
+        ));
+    }
+
+    function openDeleteModal(id, name) {
+        pendingDeleteId = id;
+        document.getElementById('modalUserName').textContent =
+            `Delete "${name}"? This action cannot be undone.`;
+        document.getElementById('confirmModal').classList.add('active');
+    }
+
+    function closeModal() {
+        pendingDeleteId = null;
+        document.getElementById('confirmModal').classList.remove('active');
+    }
+
+    async function confirmDelete() {
+        if (!pendingDeleteId) return;
+        const id = pendingDeleteId;
+        closeModal();
+        try {
+            const res = await fetchWithAuth(`${API_URL}/admin/users/${id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (res.ok) {
+                const row = document.getElementById(`row-${id}`);
+                if (row) {
+                    row.style.transition = 'opacity 0.3s, transform 0.3s';
+                    row.style.opacity = '0'; row.style.transform = 'translateX(20px)';
+                    setTimeout(() => { row.remove(); }, 320);
+                }
+                allUsers = allUsers.filter(u => u._id !== id);
+                showToast('✅ User deleted', 'success');
+            } else {
+                showToast(data.error || '❌ Failed to delete', 'error');
+            }
+        } catch { showToast('❌ Connection error', 'error'); }
+    }
+
+    function formatDate(d) {
+        if (!d) return '—';
+        return new Date(d).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+    }
+    function escapeHtml(str) {
+        const d = document.createElement('div');
+        d.appendChild(document.createTextNode(str || ''));
+        return d.innerHTML;
+    }
+    function escapeAttr(str) {
+        return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    document.getElementById('confirmModal').addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeModal();
+    });
+</script>
+<script src="../js/chatbot.js"></script>
+</body>
+</html>

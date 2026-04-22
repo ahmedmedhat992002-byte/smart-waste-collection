@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login & Register | Smart Waste Platform</title>
+    <meta name="description" content="Sign in to your SmartWaste account or create a new one.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        body { background: var(--bg-main); }
+        .auth-wrapper {
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            padding: calc(var(--nav-height) + 24px) 20px 40px;
+        }
+        .auth-card {
+            width: 100%; max-width: 440px;
+            background: var(--bg-elevated); border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl); padding: 40px;
+            box-shadow: 0 24px 48px rgba(0,0,0,0.4);
+        }
+        .auth-logo { text-align:center; margin-bottom:28px; }
+        .auth-logo .icon { font-size:2.4rem; margin-bottom:8px; }
+        .auth-logo h2 { font-size:1.5rem; margin:0; }
+        .auth-logo p { color:#64748b; font-size:0.88rem; margin:4px 0 0; }
+
+        .auth-tabs {
+            display: flex; border-bottom: 1px solid var(--glass-border);
+            margin-bottom: 28px;
+        }
+        .auth-tab {
+            flex: 1; text-align: center; padding: 12px; cursor: pointer;
+            font-weight: 600; font-size: 0.9rem; color: var(--text-muted);
+            transition: var(--transition); border-bottom: 2px solid transparent;
+        }
+        .auth-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+        .auth-form { display: none; }
+        .auth-form.active { display: block; animation: fadeIn 0.3s ease; }
+
+        .demo-creds {
+            background: rgba(16,185,129,0.07); border: 1px solid rgba(16,185,129,0.2);
+            border-radius: 10px; padding: 12px 16px; margin-bottom: 20px; font-size:0.83rem;
+        }
+        .demo-creds p { margin:0; color:#64748b; line-height:1.8; }
+        .demo-creds strong { color:#10b981; }
+
+        .divider { display:flex; align-items:center; gap:12px; margin:20px 0; }
+        .divider::before, .divider::after { content:''; flex:1; height:1px; background:rgba(255,255,255,0.07); }
+        .divider span { font-size:0.8rem; color:#64748b; }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+    <a href="index.html" class="logo">
+        <img src="assets/logo.png" alt="Smart Waste Logo">
+    </a>
+    <button class="menu-toggle">☰</button>
+    <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="features.html">Features</a></li>
+        <li><a href="contact.html">Contact</a></li>
+    </ul>
+</nav>
+
+<div class="auth-wrapper">
+    <div class="auth-card animate">
+        <div class="auth-logo">
+            <div class="icon">🌿</div>
+            <h2>Welcome Back</h2>
+            <p>Sign in to your SmartWaste portal</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="auth-tabs" id="authTabs">
+            <div class="auth-tab active" onclick="switchAuth('login')"  id="loginTab">Sign In</div>
+            <div class="auth-tab"        onclick="switchAuth('register')" id="regTab">Register</div>
+        </div>
+
+        <!-- Login Form -->
+        <form id="loginForm" class="auth-form active" novalidate>
+            <div class="demo-creds">
+                <p>
+                    <strong>Demo Admin:</strong> admin@smartwaste.ai<br>
+                    <strong>Demo Driver:</strong> driver1@fleet.com<br>
+                    <strong>Password (all):</strong> password
+                </p>
+            </div>
+
+            <div class="form-group">
+                <label for="loginEmail">Email Address</label>
+                <input type="email" id="loginEmail" class="form-control" placeholder="admin@smartwaste.ai" required autocomplete="email">
+                <div class="form-error" id="loginEmailErr">Enter a valid email</div>
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <div class="input-wrapper">
+                    <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+                    <button type="button" class="pw-toggle" onclick="togglePw('loginPassword', this)">👁</button>
+                </div>
+                <div class="form-error" id="loginPassErr">Password is required</div>
+            </div>
+
+            <button type="submit" class="btn-primary btn-full" id="loginBtn" style="margin-top:8px;">
+                Sign In
+            </button>
+            <div class="divider"><span>or use demo</span></div>
+            <button type="button" class="btn-secondary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;" onclick="demoLogin('admin')">
+                🧑‍💼 Login as Admin
+            </button>
+            <button type="button" class="btn-secondary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;margin-top:8px;" onclick="demoLogin('driver')">
+                🚛 Login as Driver
+            </button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="registerForm" class="auth-form" novalidate>
+            <div class="form-group">
+                <label for="regName">Full Name</label>
+                <input type="text" id="regName" class="form-control" placeholder="Your full name" required autocomplete="name">
+                <div class="form-error" id="regNameErr">Name must be at least 2 characters</div>
+            </div>
+            <div class="form-group">
+                <label for="regEmail">Email Address</label>
+                <input type="email" id="regEmail" class="form-control" placeholder="you@example.com" required autocomplete="email">
+                <div class="form-error" id="regEmailErr">Enter a valid email</div>
+            </div>
+            <div class="form-group">
+                <label for="regPassword">Password</label>
+                <div class="input-wrapper">
+                    <input type="password" id="regPassword" class="form-control" placeholder="Min. 6 characters" required minlength="6" autocomplete="new-password">
+                    <button type="button" class="pw-toggle" onclick="togglePw('regPassword', this)">👁</button>
+                </div>
+                <div class="form-error" id="regPassErr">Password must be at least 6 characters</div>
+            </div>
+            <div class="form-group">
+                <label for="regRole">I am a…</label>
+                <select id="regRole" class="form-control" style="background:var(--bg-elevated);color:white;">
+                    <option value="citizen">🌍 Citizen (Report Waste)</option>
+                    <option value="driver">🚛 Driver (Collect Waste)</option>
+                    <option value="admin">🧑‍💼 Admin (Manage City)</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-primary btn-full" id="regBtn">Create Account</button>
+        </form>
+
+        <p style="text-align:center;margin-top:20px;font-size:0.82rem;color:#475569;">
+            By continuing you agree to our <a href="privacy.html" style="color:#10b981;">Privacy Policy</a>
+        </p>
+    </div>
+</div>
+
+<script src="../js/app.js"></script>
+<script>
+    // Redirect if already logged in
+    document.addEventListener('DOMContentLoaded', () => {
+        const u = getUser();
+        if (u && u.name) {
+            if (u.role === 'admin')  window.location.href = '/dashboard.html';
+            else if (u.role === 'driver') window.location.href = '/frontend/driver.html';
+            else window.location.href = '/frontend/index.html';
+        }
+    });
+
+    function switchAuth(tab) {
+        document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+        document.getElementById(tab === 'login' ? 'loginTab' : 'regTab').classList.add('active');
+        document.getElementById(tab === 'login' ? 'loginForm' : 'registerForm').classList.add('active');
+    }
+
+    function togglePw(inputId, btn) {
+        const input = document.getElementById(inputId);
+        const isText = input.type === 'text';
+        input.type   = isText ? 'password' : 'text';
+        btn.textContent = isText ? '👁' : '🙈';
+    }
+
+    function demoLogin(role) {
+        const creds = {
+            admin:  { email: 'admin@smartwaste.ai',  password: 'password' },
+            driver: { email: 'driver1@fleet.com', password: 'password' },
+        };
+        const c = creds[role];
+        document.getElementById('loginEmail').value    = c.email;
+        document.getElementById('loginPassword').value = c.password;
+        document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+    }
+
+    // Login submit
+    document.getElementById('loginForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        const email    = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        let valid      = true;
+
+        if (!email || !/\S+@\S+\.\S+/.test(email)) {
+            document.getElementById('loginEmailErr').classList.add('show'); valid = false;
+        } else {
+            document.getElementById('loginEmailErr').classList.remove('show');
+        }
+        if (!password) {
+            document.getElementById('loginPassErr').classList.add('show'); valid = false;
+        } else {
+            document.getElementById('loginPassErr').classList.remove('show');
+        }
+        if (!valid) return;
+
+        const btn  = document.getElementById('loginBtn');
+        btn.innerHTML = '<span class="spinner"></span>Signing in…';
+        btn.disabled  = true;
+        await login(email, password);
+        btn.innerHTML = 'Sign In';
+        btn.disabled  = false;
+    });
+
+    // Register submit
+    document.getElementById('registerForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        const name     = document.getElementById('regName').value.trim();
+        const email    = document.getElementById('regEmail').value.trim();
+        const password = document.getElementById('regPassword').value;
+        const role     = document.getElementById('regRole').value;
+        let valid      = true;
+
+        const showErr = (id, show) => document.getElementById(id).classList[show?'add':'remove']('show');
+
+        showErr('regNameErr', name.length < 2); if (name.length < 2) valid = false;
+        showErr('regEmailErr', !/\S+@\S+\.\S+/.test(email)); if (!/\S+@\S+\.\S+/.test(email)) valid = false;
+        showErr('regPassErr', password.length < 6); if (password.length < 6) valid = false;
+        if (!valid) return;
+
+        const btn = document.getElementById('regBtn');
+        btn.innerHTML = '<span class="spinner"></span>Creating account…';
+        btn.disabled  = true;
+
+        try {
+            const res  = await fetch(`${API_URL}/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password, role })
+            });
+            const data = await res.json();
+            if (data.token) {
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user',  JSON.stringify(data.user));
+                localStorage.setItem('role',  data.user.role);
+                showToast('Account created! Welcome to SmartWaste 🎉', 'success');
+                setTimeout(() => {
+                    if (role === 'admin')       window.location.href = '/dashboard.html';
+                    else if (role === 'driver') window.location.href = '/frontend/driver.html';
+                    else                        window.location.href = '/frontend/index.html';
+                }, 800);
+            } else {
+                showToast(data.error || 'Registration failed', 'error');
+            }
+        } catch {
+            showToast('Cannot reach server. Is it running?', 'error');
+        } finally {
+            btn.innerHTML = 'Create Account';
+            btn.disabled  = false;
+        }
+    });
+</script>
+<script src="../js/chatbot.js"></script>
+</body>
+</html>

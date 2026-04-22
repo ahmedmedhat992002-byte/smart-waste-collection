@@ -3,333 +3,248 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mission Control | SmartWaste Fleet</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Driver Missions | Smart Waste Platform</title>
+    <meta name="description" content="Driver task board — view assigned waste collection missions and mark them complete.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+    <style>
+        body { background: var(--bg-main); }
+        .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background-color: rgba(59,130,246,0.2) !important; }
+        .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div { background-color: rgba(59,130,246,0.9) !important; color: #fff !important; font-family: inherit !important; font-weight: 700 !important; border: 2px solid rgba(255,255,255,0.4) !important; }
+        .driver-layout {
+            display: grid; grid-template-columns: 420px 1fr; min-height: 100vh;
+            padding-top: var(--nav-height);
+        }
+        @media (max-width: 900px) { .driver-layout { grid-template-columns: 1fr; } }
+
+        /* Task list column */
+        .task-column {
+            background: var(--bg-surface); border-right: 1px solid var(--glass-border);
+            overflow-y: auto; max-height: calc(100vh - var(--nav-height));
+            position: sticky; top: var(--nav-height);
+        }
+        .task-header {
+            padding: 20px 20px 12px; border-bottom: 1px solid var(--glass-border);
+            position: sticky; top: 0; background: var(--bg-surface); z-index: 10;
+        }
+        .task-header h2 { font-size: 1.1rem; margin: 0; }
+        .task-header p  { font-size: 0.82rem; color: #64748b; margin: 2px 0 0; }
+
+        .task-list { padding: 12px; }
+        .task-card {
+            background: var(--bg-elevated); border: 1px solid var(--glass-border);
+            border-radius: 14px; padding: 16px; margin-bottom: 10px; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .task-card:hover { border-color: rgba(16,185,129,0.3); transform: translateX(3px); }
+        .task-card.selected { border-color: #10b981; background: rgba(16,185,129,0.06); }
+        .task-card.completed { opacity: 0.55; }
+        .task-card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+        .task-cat { font-weight:700; font-size:0.95rem; }
+        .task-addr { font-size:0.82rem; color:#64748b; margin-bottom:10px; display:flex; gap:5px; align-items:flex-start; }
+        .task-footer { display:flex; gap:8px; }
+
+        /* Map column */
+        .map-column { position: relative; }
+        #driverMap { height: calc(100vh - var(--nav-height)); width:100%; }
+        @media (max-width: 900px) {
+            .task-column { max-height: 50vh; position: relative; top: 0; }
+            #driverMap { height: 50vh; }
+        }
+
+        .empty-state {
+            text-align:center; padding:48px 24px; color:#64748b;
+        }
+        .empty-state .icon { font-size:3rem; margin-bottom:16px; }
+    </style>
 </head>
-<body onload="initDriverPage()">
-    <div class="layout-wrapper">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="sidebar-logo"><i class="fas fa-truck-pickup"></i></div>
-                <span class="logo-text">FLEET OPS</span>
-            </div>
-            
-            <nav class="sidebar-nav">
-                <a href="#" class="nav-item active" data-tab="missions" onclick="switchDriverTab('missions', this)"><i class="fas fa-tasks"></i> <span>Mission List</span></a>
-                <a href="#" class="nav-item" data-tab="route" onclick="switchDriverTab('route', this)"><i class="fas fa-route"></i> <span>Route Plan</span></a>
-                <a href="#" class="nav-item" data-tab="fuel" onclick="switchDriverTab('fuel', this)"><i class="fas fa-gas-pump"></i> <span>Fuel Log</span></a>
-            </nav>
+<body>
 
-            <div class="sidebar-footer">
-                <a href="index.html" class="nav-item" onclick="logout()"><i class="fas fa-power-off"></i> <span>Go Off Duty</span></a>
-            </div>
-        </aside>
+<!-- Navbar -->
+<nav class="navbar">
+    <a href="index.html" class="logo">
+        <img src="assets/logo.png" alt="Smart Waste Logo">
+    </a>
+    <button class="menu-toggle">☰</button>
+    <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <div id="authButtons" style="display:flex;align-items:center;">
+            <a href="login.html" class="btn-primary" style="padding:9px 20px;">Login</a>
+        </div>
+        <div id="userInfo" style="display:none;align-items:center;gap:10px;">
+            <span id="userHandle"></span>
+            <button onclick="logout()" class="btn-secondary" style="padding:8px 16px;font-size:0.85rem;font-weight:600;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:white;cursor:pointer;">Logout</button>
+        </div>
+    </ul>
+</nav>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <header class="dashboard-header animate-in">
-                <div>
-                    <h1 class="text-gradient">Fleet Operations</h1>
-                    <p style="color: var(--text-muted);">Real-time mission queue for Dispatch Unit #402</p>
-                </div>
-                <div class="header-actions">
-                    <div class="status-indicator live">ACTIVE DUTY</div>
-                    <div class="user-profile glass-card">
-                        <img src="https://ui-avatars.com/api/?name=Driver&background=10b981&color=fff" alt="Driver">
-                    </div>
-                </div>
-            </header>
-
-            <!-- MISSIONS TAB -->
-            <div id="missions-tab" class="tab-content active" style="display: block;">
-                <div id="taskList" class="mission-grid">
-                    <!-- Mission Cards via JS -->
-                </div>
-
-                <div id="emptyState" class="empty-state animate-in" style="display: none;">
-                    <div class="empty-icon"><i class="fas fa-circle-check"></i></div>
-                    <h2>All Clear!</h2>
-                    <p>Your sector is currently clean. Await further dispatch instructions from municipal control.</p>
-                </div>
-            </div>
-
-            <!-- ROUTE PLAN TAB -->
-            <div id="route-tab" class="tab-content" style="display: none;">
-                <div class="glass-card animate-in">
-                    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-                        <h2>Optimized Route Map</h2>
-                        <span class="status-indicator live">LIVE GPS</span>
-                    </div>
-                    <div id="driverMap" style="height: 500px; width: 100%; border-radius: 15px; border: 1px solid var(--glass-border);"></div>
-                </div>
-            </div>
-
-            <!-- FUEL LOG TAB -->
-            <div id="fuel-tab" class="tab-content" style="display: none;">
-                <div class="dashboard-grid" style="grid-template-columns: 1fr 2fr; gap: 2rem;">
-                    <div class="glass-card animate-in">
-                        <h2 style="margin-bottom: 1.5rem;">Log Refuel</h2>
-                        <form id="fuelForm" onsubmit="submitFuelLog(event)">
-                            <div class="form-group">
-                                <label>Fuel Volume (Liters)</label>
-                                <div class="input-with-icon">
-                                    <i class="fas fa-gas-pump"></i>
-                                    <input type="number" step="0.1" id="fuelLiters" required placeholder="0.0">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Total Cost</label>
-                                <div class="input-with-icon">
-                                    <i class="fas fa-money-bill"></i>
-                                    <input type="number" step="0.01" id="fuelCost" required placeholder="0.00">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Current Odometer</label>
-                                <div class="input-with-icon">
-                                    <i class="fas fa-gauge-high"></i>
-                                    <input type="number" id="fuelOdo" required placeholder="0">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Receipt Photo (Optional)</label>
-                                <input type="file" id="fuelReceipt" accept="image/*" style="width:100%; color:var(--text-muted); background:rgba(255,255,255,0.05); padding:10px; border-radius:12px;">
-                            </div>
-                            <div class="form-group">
-                                <label>Notes</label>
-                                <textarea id="fuelNotes" rows="2" placeholder="Any vehicle issues?"></textarea>
-                            </div>
-                            <button type="submit" class="btn-premium" style="width:100%; justify-content:center; margin-top:1rem;" id="fuelSubmitBtn">Submit Log</button>
-                        </form>
-                    </div>
-
-                    <div class="glass-card animate-in" style="animation-delay: 0.1s;">
-                        <h2 style="margin-bottom: 1.5rem;">Refuel History</h2>
-                        <div class="table-wrapper">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>DATE</th>
-                                        <th>LITERS</th>
-                                        <th>COST</th>
-                                        <th>ODOMETER</th>
-                                        <th>NOTES</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="fuelTable">
-                                    <!-- Populated by JS -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Collection Form Modal -->
-    <div id="completeModal" class="modal-overlay" style="display: none;">
-        <div class="glass-card modal-content animate-in">
-            <div class="modal-header">
-                <h2>Confirm Collection</h2>
-                <button class="btn-close" onclick="hideModal('completeModal')"><i class="fas fa-times"></i></button>
-            </div>
-            <p id="currentReportId" style="display:none;"></p>
-            <div class="form-group">
-                <label>Total Load Weight (kg)</label>
-                <div class="input-with-icon">
-                    <i class="fas fa-weight-hanging"></i>
-                    <input type="number" id="collectionWeight" placeholder="0.00">
-                </div>
-            </div>
-            <div class="form-group">
-                <label>Field Notes</label>
-                <textarea id="collectionNotes" rows="3" placeholder="Any issues encountered during collection?"></textarea>
-            </div>
-            <div class="modal-actions">
-                <button class="btn-premium" onclick="submitCompletion()">Complete Mission</button>
-                <button class="btn-premium secondary" onclick="hideModal('completeModal')">Abort</button>
+<div class="driver-layout">
+    <!-- Task List -->
+    <div class="task-column">
+        <div class="task-header">
+            <h2>🚛 Fleet Missions</h2>
+            <p id="taskSummary">Loading tasks…</p>
+        </div>
+        <div class="task-list" id="taskList">
+            <div class="empty-state">
+                <div class="spinner" style="width:32px;height:32px;border-width:3px;margin:0 auto;"></div>
+                <p style="margin-top:16px;">Loading tasks…</p>
             </div>
         </div>
     </div>
 
-    <style>
-        .sidebar {
-            background: rgba(15, 23, 42, 0.4);
-            backdrop-filter: blur(20px);
-            border-right: 1px solid var(--glass-border);
-            padding: 2rem 1.5rem;
+    <!-- Map -->
+    <div class="map-column">
+        <div id="driverMap"></div>
+    </div>
+</div>
+
+<script src="../js/app.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script>
+    let driverMap = null, markerLayer = null, tasks = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const role = localStorage.getItem('role');
+        if (!role || (role !== 'driver' && role !== 'admin')) {
+            showToast('Driver access required', 'error');
+            setTimeout(() => window.location.href = '/frontend/login.html', 1500);
+            return;
         }
-        .sidebar-header { display: flex; align-items: center; gap: 12px; margin-bottom: 3rem; }
-        .sidebar-logo { width: 32px; height: 32px; background: var(--grad-eco); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-        .logo-text { font-weight: 800; letter-spacing: 1px; color: var(--text-white); }
-        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; color: var(--text-muted); text-decoration: none; margin-bottom: 8px; transition: all 0.3s; }
-        .nav-item:hover, .nav-item.active { background: rgba(16, 185, 129, 0.1); color: var(--primary); }
-        .sidebar-footer { margin-top: auto; border-top: 1px solid var(--glass-border); padding-top: 1rem; }
+        initDriverMap();
+        loadTasks();
+    });
 
-        .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem; }
-        .header-actions { display: flex; align-items: center; gap: 1.5rem; }
-        .status-indicator.live { background: rgba(16, 185, 129, 0.1); color: var(--primary); padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-        .status-indicator.live::before { content: ''; width: 8px; height: 8px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 10px var(--primary); }
-        
-        .mission-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem; }
-        .mission-card { display: flex; flex-direction: column; gap: 1.5rem; }
-        .mission-header { display: flex; justify-content: space-between; align-items: flex-start; }
-        .mission-id { font-size: 1.2rem; font-weight: 700; margin-top: 5px; }
-        .mission-meta { color: var(--text-muted); font-size: 0.85rem; }
-        
-        .mission-details { background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 15px; padding: 1.25rem; }
-        .detail-item { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; font-size: 0.95rem; }
-        .detail-item i { color: var(--primary); width: 16px; }
-        .reporter-note { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--glass-border); color: var(--text-muted); font-size: 0.85rem; font-style: italic; }
+    function initDriverMap() {
+        driverMap  = L.map('driverMap').setView([30.0444, 31.2357], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(driverMap);
+        markerLayer = L.markerClusterGroup({
+            maxClusterRadius: 40,
+            spiderfyOnMaxZoom: true,
+            showCoverageOnHover: false,
+            zoomToBoundsOnClick: true
+        }).addTo(driverMap);
+    }
 
-        .mission-image { border-radius: 12px; overflow: hidden; height: 180px; width: 100%; border: 1px solid var(--glass-border); }
-        .mission-image img { width: 100%; height: 100%; object-fit: cover; }
-
-        .mission-actions { display: flex; gap: 10px; }
-        .mission-actions .btn-premium { flex: 1; justify-content: center; }
-
-        .empty-state { text-align: center; padding: 6rem 2rem; display: flex; flex-direction: column; align-items: center; }
-        .empty-icon { width: 80px; height: 80px; background: rgba(16, 185, 129, 0.1); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 2rem; }
-        .empty-state h2 { margin-bottom: 1rem; }
-        .empty-state p { color: var(--text-muted); max-width: 400px; }
-
-        .modal-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.8); backdrop-filter: blur(8px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { width: 100%; max-width: 450px; padding: 2.5rem; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-        .btn-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem; }
-        
-        .form-group { margin-bottom: 1.5rem; }
-        .form-group label { display: block; margin-bottom: 8px; font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
-        .input-with-icon { position: relative; }
-        .input-with-icon i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--primary); }
-        .input-with-icon input { width: 100%; padding: 12px 12px 12px 45px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 12px; color: white; }
-        textarea { width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 12px; color: white; resize: vertical; }
-
-        .modal-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 1rem; }
-        .modal-actions .btn-premium { width: 100%; justify-content: center; }
-
-        .text-gradient { background: var(--grad-eco); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-        
-        /* Table Styles for Fuel Log */
-        .table-wrapper { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; text-align: left; }
-        th { padding: 16px; color: var(--text-muted); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; border-bottom: 1px solid var(--glass-border); }
-        td { padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.02); font-size: 0.9rem; }
-        tbody tr:hover { background: rgba(255,255,255,0.02); }
-
-        @media (max-width: 900px) {
-            .dashboard-grid { grid-template-columns: 1fr !important; }
+    async function loadTasks() {
+        try {
+            const res = await fetchWithAuth(`${API_URL}/driver/tasks`);
+            if (!res.ok) throw new Error('Auth failed');
+            tasks = await res.json();
+            renderTasks(tasks);
+            renderMapMarkers(tasks);
+            const summary = document.getElementById('taskSummary');
+            const pending = tasks.filter(t => t.status !== 'collected').length;
+            summary.textContent = `${tasks.length} total • ${pending} pending`;
+        } catch (err) {
+            document.getElementById('taskList').innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">⚠️</div>
+                    <p>Failed to load tasks. Check the server.</p>
+                </div>`;
         }
-        @media (max-width: 768px) {
-            .mission-grid { grid-template-columns: 1fr; }
-        }
-    </style>
+    }
 
-    <script src="js/app.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="js/driver-tabs.js"></script>
-    <script>
-        async function initDriverPage() {
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            if (localStorage.getItem('role') !== 'driver') {
-                window.location.href = 'index.html';
-                return;
+    function renderTasks(tasks) {
+        const list = document.getElementById('taskList');
+        if (!tasks.length) {
+            list.innerHTML = `<div class="empty-state"><div class="icon">☕</div><p>No tasks assigned. Enjoy the break!</p></div>`;
+            return;
+        }
+
+        const statusBadge = s => {
+            const m = { pending:'badge-warning', collected:'badge-primary', dispatched:'badge-blue' };
+            return `<span class="badge ${m[s]||'badge-purple'}">${s}</span>`;
+        };
+
+        list.innerHTML = tasks.map((t, i) => `
+            <div class="task-card ${t.status==='collected'?'completed':''}" id="task-${t._id}" onclick="focusTask('${t._id}')">
+                <div class="task-card-header">
+                    <span class="task-cat">${getCatEmoji(t.category)} ${t.category}</span>
+                    ${statusBadge(t.status)}
+                </div>
+                <div class="task-addr">📍 ${t.location?.address || 'GPS coordinates only'}</div>
+                ${t.description ? `<p style="font-size:0.82rem;color:#94a3b8;margin-bottom:10px;line-height:1.5;">${t.description}</p>` : ''}
+                <div class="task-footer">
+                    ${t.location?.lat ? `
+                        <a href="https://www.google.com/maps?q=${t.location.lat},${t.location.lng}" target="_blank"
+                           class="btn-primary btn-sm" style="text-decoration:none;">
+                            🗺 Navigate
+                        </a>` : ''}
+                    ${t.status !== 'collected' ? `
+                        <button class="btn-secondary btn-sm" style="cursor:pointer;font-family:inherit;font-weight:600;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:white;"
+                            onclick="event.stopPropagation(); confirmComplete('${t._id}', '${t.category}')">
+                            ✅ Mark Done
+                        </button>` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function getCatEmoji(cat) {
+        const m = { Plastics:'🧴', Organic:'🍂', Metal:'🔩', Glass:'🪟', Hazardous:'⚠️', Electronic:'📱' };
+        return m[cat] || '♻️';
+    }
+
+    function renderMapMarkers(tasks) {
+        markerLayer.clearLayers();
+        const colors = { pending:'#f59e0b', dispatched:'#86efac', collected:'#10b981' };
+
+        tasks.forEach(t => {
+            if (!t.location?.lat) return;
+            const color = colors[t.status] || '#64748b';
+            const icon  = L.divIcon({
+                html: `<div style="width:16px;height:16px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 0 8px ${color};"></div>`,
+                className: '', iconSize: [16,16], iconAnchor: [8,8]
+            });
+            const m = L.marker([t.location.lat, t.location.lng], { icon });
+            m.bindPopup(`
+                <div style="font-family:Inter,sans-serif;font-size:13px;">
+                    <strong style="color:${color}">${getCatEmoji(t.category)} ${t.category}</strong><br>
+                    📍 ${t.location.address}<br>
+                    Status: <b>${t.status}</b>
+                </div>
+            `);
+            m.on('click', () => document.getElementById(`task-${t._id}`)?.scrollIntoView({ behavior:'smooth', block:'center' }));
+            markerLayer.addLayer(m);
+        });
+    }
+
+    function focusTask(id) {
+        document.querySelectorAll('.task-card').forEach(c => c.classList.remove('selected'));
+        document.getElementById(`task-${id}`)?.classList.add('selected');
+        const task = tasks.find(t => t._id === id);
+        if (task?.location?.lat) {
+            driverMap.flyTo([task.location.lat, task.location.lng], 15, { duration: 1 });
+        }
+    }
+
+    function confirmComplete(id, cat) {
+        if (confirm(`Confirm: Have you collected the ${cat} waste?`)) markComplete(id);
+    }
+
+    async function markComplete(taskId) {
+        try {
+            const res = await fetchWithAuth(`${API_URL}/driver/tasks/${taskId}/complete`, { method: 'PATCH' });
+            if (res.ok) {
+                showToast('✅ Task marked as collected!', 'success');
+                loadTasks();
+            } else {
+                const d = await res.json();
+                showToast(d.error || 'Failed to update task', 'error');
             }
-
-            try {
-                // Use fetchWithAuth for secure API calls
-                const res = await fetchWithAuth(`${API_URL}/driver/tasks/${user.id || user._id}`);
-                if (!res || !res.ok) return;
-                
-                const tasks = await res.json();
-                const container = document.getElementById('taskList');
-                const emptyState = document.getElementById('emptyState');
-                
-                container.innerHTML = '';
-                if (!tasks || tasks.length === 0) {
-                    emptyState.style.display = 'flex';
-                    return;
-                } else {
-                    emptyState.style.display = 'none';
-                }
-
-                tasks.forEach((task, index) => {
-                    const card = `
-                        <div class="glass-card mission-card animate-in" style="animation-delay: ${index * 0.1}s">
-                            <div class="mission-header">
-                                <div class="mission-info">
-                                    <span class="badge ${task.category}">${task.category.toUpperCase()} WASTE</span>
-                                    <div class="mission-id">Incident #${task._id.substr(-6).toUpperCase()}</div>
-                                </div>
-                                <div class="mission-meta">
-                                    <i class="fas fa-clock"></i> ${new Date(task.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                </div>
-                            </div>
-                            
-                            <div class="mission-details">
-                                <div class="detail-item">
-                                    <i class="fas fa-location-dot"></i>
-                                    <span>${task.location.address || 'GPS Coordinates Captured'}</span>
-                                </div>
-                                <div class="reporter-note">
-                                    <b>Note:</b> ${task.description || 'No specific instructions provided.'}
-                                </div>
-                            </div>
-
-                            ${task.images && task.images.length > 0 ? `
-                                <div class="mission-image">
-                                    <img src="${task.images[0]}" alt="Waste report">
-                                </div>
-                            ` : ''}
-
-                            <div class="mission-actions">
-                                <a href="https://www.google.com/maps/dir/?api=1&destination=${task.location.lat},${task.location.lng}" target="_blank" class="btn-premium">
-                                    <i class="fas fa-location-arrow"></i> Navigate
-                                </a>
-                                <button class="btn-premium secondary" onclick="openCompleteModal('${task._id}')">
-                                    <i class="fas fa-check-double"></i> Complete
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                    container.innerHTML += card;
-                });
-            } catch (err) {
-                console.error('Task sync error:', err);
-                showToast('Mission queue sync failed.', 'error');
-            }
-        }
-
-        function openCompleteModal(id) {
-            document.getElementById('currentReportId').innerText = id;
-            showModal('completeModal');
-        }
-
-        async function submitCompletion() {
-            const reportId = document.getElementById('currentReportId').innerText;
-            const weight = document.getElementById('collectionWeight').value;
-            const notes = document.getElementById('collectionNotes').value;
-
-            try {
-                const res = await fetchWithAuth(`${API_URL}/driver/complete-collection`, {
-                    method: 'POST',
-                    body: JSON.stringify({ reportId, weight, notes })
-                });
-
-                if (res && res.ok) {
-                    hideModal('completeModal');
-                    showToast('Mission secured! Well done.', 'success');
-                    initDriverPage();
-                }
-            } catch (err) {
-                console.error('Completion error:', err);
-                showToast('Failed to log completion.', 'error');
-            }
-        }
-    </script>
+        } catch { showToast('Connection error', 'error'); }
+    }
+</script>
+<script src="../js/chatbot.js"></script>
 </body>
 </html>

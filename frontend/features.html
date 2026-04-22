@@ -3,108 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Features | SmartWaste</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Features | Smart Waste Platform</title>
+    <meta name="description" content="Discover the capabilities of the SmartWaste System.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-    <nav class="navbar glass-card" id="mainNav">
-        <div class="nav-container">
-            <a href="index.html" class="logo">
-                <div class="logo-icon"><i class="fas fa-recycle"></i></div>
-                <span>SMARTWASTE</span>
-            </a>
-            <div class="nav-links" id="navLinks">
-                <a href="index.html">Home</a>
-                <a href="about.html">About</a>
-                <a href="features.html" class="active">Features</a>
-                <a href="report.html">Report Issue</a>
-                <a href="leaderboard.html">Leaderboard</a>
-                <a href="contact.html">Contact</a>
-                <a href="faq.html">FAQ</a>
-                <a href="dashboard.html" style="display: none;">Admin</a>
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+        <img src="assets/logo.png" alt="Smart Waste Logo">
+    </a>
+        <button class="menu-toggle">☰</button>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="about.html">About</a></li>
+            <li><a href="features.html" class="active">Features</a></li>
+            <li><a href="../dashboard.html">Dashboard</a></li>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="faq.html">FAQ</a></li>
+            <div id="authButtons" style="display:flex;align-items:center;">
+                <a href="login.html" class="btn-primary" style="padding:9px 20px;">Login / Register</a>
             </div>
-            <button class="mobile-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
-        </div>
+            <div id="userInfo" style="display:none;align-items:center;gap:10px;">
+                <span id="userHandle"></span>
+                <button onclick="logout()" class="btn-secondary" style="padding:8px 16px;font-size:0.85rem;font-weight:600;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:white;cursor:pointer;">Logout</button>
+            </div>
+        </ul>
     </nav>
 
-    <main class="container animate-in" style="padding: 100px 0;">
-        <div class="section-badge">Platform Capabilities</div>
-        <h1 class="text-gradient" style="font-size: 3.5rem; margin-bottom: 3rem;">Smart City Engineering</h1>
-        
-        <div class="features-grid">
-            <div class="glass-card feature-card">
-                <div class="feature-icon"><i class="fas fa-camera"></i></div>
-                <h3>Citizen Reporting</h3>
-                <p>Instant incident reporting with GPS and AI image classification.</p>
-            </div>
-            <div class="glass-card feature-card">
-                <div class="feature-icon"><i class="fas fa-route"></i></div>
-                <h3>Route Optimization</h3>
-                <p>AI-driven collection paths to minimize fuel and maximize efficiency.</p>
-            </div>
-            <div class="glass-card feature-card">
-                <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
-                <h3>Live Dashboard</h3>
-                <p>Real-time telemetry for city administrators to monitor cleanup progress.</p>
-            </div>
-            <div class="glass-card feature-card">
-                <div class="feature-icon"><i class="fas fa-coins"></i></div>
-                <h3>Eco-Rewards</h3>
-                <p>Gamified credit system that rewards citizens for sustainable actions.</p>
-            </div>
+    <!-- Header -->
+    <header class="section text-center" style="padding-top: 150px; padding-bottom: 60px;">
+        <div class="container animate">
+            <h1 style="font-size: 3rem; font-weight: 800; margin-bottom: 20px;">Platform Capabilities</h1>
+            <p style="font-size: 1.1rem; max-width: 700px; margin: 0 auto;">A comprehensive suite of tools designed to modernize urban waste management end-to-end.</p>
         </div>
-    </main>
+    </header>
 
-    <footer class="footer-main">
-        <div class="container footer-grid">
-            <div class="footer-col footer-about">
-                <a href="index.html" class="logo" style="margin-bottom: 1.5rem;">
-                    <div class="logo-icon"><i class="fas fa-recycle"></i></div>
-                    <span>SMARTWASTE</span>
-                </a>
-                <p>Building cleaner, smarter cities through citizen engagement and real-time data analytics.</p>
-                <div class="social-links">
-                    <a href="#"><i class="fab fa-twitter"></i></a>
-                    <a href="#"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#"><i class="fab fa-instagram"></i></a>
-                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
+    <!-- Features Grid -->
+    <section class="section container">
+        <div class="grid-2 reveal">
+            <!-- Feature 1 -->
+            <div class="glass-card">
+                <div style="font-size: 2.5rem; margin-bottom: 15px;">📱</div>
+                <h3 style="color: var(--primary);">Citizen Reporting System</h3>
+                <p>Allow residents to act as eyes on the street. With our mobile-ready interface, citizens can submit localized reports of illegal dumping or missed collections complete with photo evidence and GPS coordinates.</p>
+            </div>
+            <!-- Feature 2 -->
+            <div class="glass-card">
+                <div style="font-size: 2.5rem; margin-bottom: 15px;">🛰️</div>
+                <h3 style="color: var(--secondary);">Real-Time Waste Tracking</h3>
+                <p>IOT-enabled dumpsters and bins ping our servers with fill levels. The system dynamically monitors city-wide waste generation to anticipate needs before bins overflow.</p>
+            </div>
+            <!-- Feature 3 -->
+            <div class="glass-card">
+                <div style="font-size: 2.5rem; margin-bottom: 15px;">💻</div>
+                <h3 style="color: var(--accent);">Smart Dashboard</h3>
+                <p>City administrators gain access to a centralized command center. View live truck locations, resolve pending reports, and analyze historic trends to make data-driven decisions.</p>
+            </div>
+            <!-- Feature 4 -->
+            <div class="glass-card">
+                <div style="font-size: 2.5rem; margin-bottom: 15px;">🗺️</div>
+                <h3 style="color: #8b5cf6;">Driver Route Optimization</h3>
+                <p>Stop sending trucks to empty bins. Our AI algorithm calculates the most efficient daily collection routes based on live traffic, bin capacity, and pending priority reports.</p>
+            </div>
+            <!-- Feature 5 -->
+            <div class="glass-card" style="grid-column: 1 / -1;">
+                <div style="display: flex; gap: 30px; align-items: center; flex-wrap: wrap;">
+                    <div style="font-size: 4rem;">🎁</div>
+                    <div style="flex: 1; min-width: 250px;">
+                        <h3 style="color: var(--primary);">Eco-Points Reward System</h3>
+                        <p>Incentivize positive behavior. Citizens earn Eco-Points for verified reports, recycling efforts, and reducing waste. Points can be redeemed for local municipal perks or discounts at partnered businesses.</p>
+                    </div>
                 </div>
             </div>
-
-            <div class="footer-col">
-                <h4>Platform</h4>
-                <ul class="footer-links">
-                    <li><a href="features.html">Features</a></li>
-                    <li><a href="leaderboard.html">Leaderboard</a></li>
-                    <li><a href="report.html">Report Issue</a></li>
-                    <li><a href="tips.html">Eco-Tips</a></li>
-                </ul>
-            </div>
-
-            <div class="footer-col">
-                <h4>Support</h4>
-                <ul class="footer-links">
-                    <li><a href="faq.html">FAQ</a></li>
-                    <li><a href="contact.html">Contact Us</a></li>
-                    <li><a href="about.html">About Us</a></li>
-                    <li><a href="#">Privacy Policy</a></li>
-                </ul>
-            </div>
-
-            <div class="footer-col">
-                <h4>Stay Green</h4>
-                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Join our newsletter for weekly sustainability updates.</p>
-                <form onsubmit="event.preventDefault(); showToast('Subscribed!', 'success');" style="display: flex; gap: 0.5rem;">
-                    <input type="email" placeholder="Email" required style="padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white; flex: 1; font-size: 0.85rem;">
-                    <button type="submit" class="btn-premium" style="padding: 10px 15px;"><i class="fas fa-paper-plane"></i></button>
-                </form>
-            </div>
         </div>
-        <div class="footer-bottom">
-            <p>&copy; 2026 SmartWaste Sustainability. Built for a better tomorrow.</p>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>© 2026 SmartWaste System. All rights reserved.</p>
+                <p><a href="../dashboard.html" style="color:#10b981;">Admin Dashboard</a></p>
+            </div>
         </div>
     </footer>
-    <script src="js/app.js"></script>
+    <script src="../js/app.js"></script>
+<script src="../js/chatbot.js"></script>
 </body>
 </html>

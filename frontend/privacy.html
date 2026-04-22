@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy | Smart Waste Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+        <img src="assets/logo.png" alt="Smart Waste Logo">
+    </a>
+        <button class="menu-toggle">☰</button>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="about.html">About</a></li>
+            <li><a href="features.html">Features</a></li>
+            <li><a href="../dashboard.html">Dashboard</a></li>
+            <div id="authButtons" style="display:flex;align-items:center;">
+                <a href="login.html" class="btn-primary" style="padding:9px 20px;">Login / Register</a>
+            </div>
+            <div id="userInfo" style="display:none;align-items:center;gap:10px;">
+                <span id="userHandle"></span>
+                <button onclick="logout()" class="btn-secondary" style="padding:8px 16px;font-size:0.85rem;font-weight:600;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:white;cursor:pointer;">Logout</button>
+            </div>
+        </ul>
+    </nav>
+
+    <header class="section text-center" style="padding-top: 150px; padding-bottom: 40px;">
+        <div class="container animate">
+            <h1 style="font-size: 2.5rem; font-weight: 800;">Privacy Policy</h1>
+            <p>How we handle and protect your data.</p>
+        </div>
+    </header>
+
+    <section class="section container animate" style="padding-top: 0;">
+        <div class="glass-card">
+            <h3>1. Data Collection</h3>
+            <p>We collect GPS coordinates and user-provided details (such as email and name) solely for the purpose of optimizing waste management operations.</p>
+            <h3>2. Data Security</h3>
+            <p>Passwords are securely hashed. We employ modern security protocols to ensure your data is safe.</p>
+            <h3>3. Usage of Data</h3>
+            <p>We do not share your private data with third parties without direct explicit consent outside of municipal operation bounds.</p>
+        </div>
+    </section>
+
+    <!-- Global Footer -->
+    <footer class="footer">
+        <div class="container"><div class="footer-bottom"><p>&copy; 2026 SmartWaste System. All rights reserved.</p></div></div>
+    </footer>
+    <script src="../js/app.js"></script>
+<script src="../js/chatbot.js"></script>
+</body>
+</html>
