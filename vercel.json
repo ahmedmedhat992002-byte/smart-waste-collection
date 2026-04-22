@@ -7,10 +7,13 @@
     {
       "source": "/uploads/(.*)",
       "destination": "/backend/server.js"
-    },
+    }
+  ],
+  "redirects": [
     {
       "source": "/",
-      "destination": "/frontend/index.html"
+      "destination": "/frontend/index.html",
+      "permanent": false
     }
   ]
 }
