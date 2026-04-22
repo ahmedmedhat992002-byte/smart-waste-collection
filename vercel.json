@@ -1,19 +1,31 @@
 {
-  "rewrites": [
+  "version": 2,
+  "builds": [
     {
-      "source": "/api/(.*)",
-      "destination": "/backend/server.js"
+      "src": "backend/server.js",
+      "use": "@vercel/node"
     },
     {
-      "source": "/uploads/(.*)",
-      "destination": "/backend/server.js"
+      "src": "**",
+      "use": "@vercel/static"
     }
   ],
-  "redirects": [
+  "routes": [
     {
-      "source": "/",
-      "destination": "/frontend/index.html",
-      "permanent": false
+      "src": "/",
+      "status": 307,
+      "headers": { "Location": "/frontend/index.html" }
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/backend/server.js"
+    },
+    {
+      "src": "/uploads/(.*)",
+      "dest": "/backend/server.js"
     }
   ]
 }

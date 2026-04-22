@@ -26,17 +26,20 @@ app.use(express.static(path.join(__dirname, '../')));
 console.log('✅  SmartWaste backend running (in-memory data store).');
 
 // ── API Routes ────────────────────────────────────────────────────────────────
-app.use('/api', require('./routes'));
+const apiRoutes = require('./routes');
+app.use('/api', apiRoutes);
+app.use(apiRoutes); // Handle Vercel rewritten routes that strip the /api prefix
 
 // ── Root redirect ─────────────────────────────────────────────────────────────
 app.get('/', (req, res) => res.redirect('/frontend/index.html'));
 
 // ── 404 handler ───────────────────────────────────────────────────────────────
 app.use((req, res) => {
-    if (req.path.startsWith('/api')) {
-        return res.status(404).json({ error: `Route ${req.path} not found` });
+    if (req.accepts('html')) {
+        res.status(404).send('Page not found. <a href="/frontend/index.html">Go Home</a>');
+    } else {
+        res.status(404).json({ error: `API Route ${req.path} not found` });
     }
-    res.status(404).send('Page not found. <a href="/frontend/index.html">Go Home</a>');
 });
 
 // ── Global error handler ──────────────────────────────────────────────────────
