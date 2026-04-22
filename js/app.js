@@ -6,6 +6,125 @@
 
 const API_URL = '/api';
 
+// ── Splash Screen ─────────────────────────────────────────────────────────────
+(function () {
+    const css = document.createElement('style');
+    css.textContent = `
+    #swSplash {
+        position:fixed;inset:0;z-index:999999;
+        background:#0b1120;
+        display:flex;align-items:center;justify-content:center;
+        flex-direction:column;gap:28px;
+        transition:opacity .7s ease,transform .7s ease;
+    }
+    #swSplash.sw-hide { opacity:0;transform:scale(1.05);pointer-events:none; }
+    .sw-inner {
+        display:flex;flex-direction:column;align-items:center;gap:24px;
+        animation:swIn .65s cubic-bezier(.22,1,.36,1) both;
+    }
+    @keyframes swIn {
+        from{opacity:0;transform:scale(.8) translateY(24px)}
+        to  {opacity:1;transform:scale(1)  translateY(0)}
+    }
+    /* spinning rings */
+    .sw-ring {
+        position:relative;width:150px;height:150px;
+    }
+    .sw-ring::before{
+        content:'';position:absolute;inset:-10px;border-radius:50%;
+        border:2px solid transparent;
+        border-top-color:#10b981;border-right-color:rgba(16,185,129,.25);
+        animation:swSpin 1.1s linear infinite;
+    }
+    .sw-ring::after{
+        content:'';position:absolute;inset:-20px;border-radius:50%;
+        border:1px solid transparent;
+        border-bottom-color:rgba(6,182,212,.4);border-left-color:rgba(6,182,212,.15);
+        animation:swSpin 1.9s linear infinite reverse;
+    }
+    @keyframes swSpin{ to{transform:rotate(360deg)} }
+    /* logo circle — crops the gray PNG border */
+    .sw-logo-circle{
+        width:150px;height:150px;border-radius:50%;overflow:hidden;position:relative;
+        box-shadow:0 0 50px rgba(16,185,129,.3),0 0 100px rgba(16,185,129,.1);
+    }
+    .sw-logo-circle img{
+        width:100%;height:100%;
+        object-fit:cover;object-position:center 28%;
+        transform:scale(1.28);
+        mix-blend-mode:screen;
+    }
+    .sw-glow{
+        position:absolute;inset:0;border-radius:50%;
+        background:radial-gradient(circle,rgba(16,185,129,.18) 0%,transparent 70%);
+        animation:swPulse 2s ease-in-out infinite;pointer-events:none;
+    }
+    @keyframes swPulse{
+        0%,100%{opacity:.5;transform:scale(1)}
+        50%    {opacity:1  ;transform:scale(1.18)}
+    }
+    /* text */
+    .sw-text{text-align:center;}
+    .sw-text h2{
+        font-size:1.7rem;font-weight:800;margin:0 0 4px;
+        font-family:'Inter',sans-serif;
+        background:linear-gradient(135deg,#10b981,#06b6d4);
+        -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    }
+    .sw-text p{
+        font-size:.72rem;color:#475569;letter-spacing:.2em;
+        text-transform:uppercase;margin:0;font-family:'Inter',sans-serif;
+    }
+    /* progress bar */
+    .sw-bar{width:180px;height:2px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;}
+    .sw-bar-fill{
+        height:100%;width:0%;
+        background:linear-gradient(90deg,#10b981,#06b6d4);
+        border-radius:2px;
+        animation:swLoad 2.2s cubic-bezier(.4,0,.2,1) forwards;
+    }
+    @keyframes swLoad{0%{width:0%}55%{width:60%}85%{width:88%}100%{width:100%}}
+    /* dots */
+    .sw-dots{display:flex;gap:6px;}
+    .sw-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.15);}
+    .sw-dot:nth-child(1){animation:swDot 1.2s 0s   infinite;}
+    .sw-dot:nth-child(2){animation:swDot 1.2s .2s  infinite;}
+    .sw-dot:nth-child(3){animation:swDot 1.2s .4s  infinite;}
+    @keyframes swDot{
+        0%,100%{background:rgba(255,255,255,.15);transform:scale(1)}
+        50%    {background:#10b981;transform:scale(1.5)}
+    }`;
+    document.head.appendChild(css);
+
+    const el = document.createElement('div');
+    el.id = 'swSplash';
+    el.innerHTML = `
+        <div class="sw-inner">
+            <div class="sw-ring">
+                <div class="sw-logo-circle">
+                    <div class="sw-glow"></div>
+                    <img src="/frontend/assets/logo.png" alt="SmartWaste">
+                </div>
+            </div>
+            <div class="sw-text"><h2>Smart Waste</h2><p>Management System</p></div>
+            <div class="sw-bar"><div class="sw-bar-fill"></div></div>
+            <div class="sw-dots"><div class="sw-dot"></div><div class="sw-dot"></div><div class="sw-dot"></div></div>
+        </div>`;
+
+    const append = () => document.body && document.body.appendChild(el);
+    if (document.body) append(); else document.addEventListener('DOMContentLoaded', append);
+
+    function hide() {
+        el.classList.add('sw-hide');
+        setTimeout(() => el.parentNode && el.remove(), 800);
+    }
+    Promise.all([
+        new Promise(r => setTimeout(r, 2350)),
+        new Promise(r => document.readyState === 'complete' ? r() : window.addEventListener('load', r, {once:true}))
+    ]).then(hide);
+})();
+
+
 // ── Toast Notification ────────────────────────────────────────────────────────
 function showToast(msg, type = 'success') {
     let toast = document.getElementById('globalToast');
