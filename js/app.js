@@ -6,8 +6,13 @@
 
 const API_URL = '/api';
 
-// ── Splash Screen ─────────────────────────────────────────────────────────────
+
+// ── Splash Screen (first visit only) ─────────────────────────────────────────
 (function () {
+    // Only show on first visit in this browser session
+    if (sessionStorage.getItem('sw_splashed')) return;
+    sessionStorage.setItem('sw_splashed', '1');
+
     const css = document.createElement('style');
     css.textContent = `
     #swSplash {
