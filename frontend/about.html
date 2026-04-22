@@ -4,146 +4,293 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About Us | Smart Waste Platform</title>
-    <meta name="description" content="Learn about the SmartWaste mission to improve urban waste management using technology.">
+    <meta name="description" content="Meet the team behind the SmartWaste Platform — Faculty of Business / BIS, Cairo University.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        /* ── Supervisor Cards ─────────────────────────────────────── */
+        .supervisor-card {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 28px;
+            border-radius: var(--radius-md);
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: all 0.3s;
+        }
+        .supervisor-card:hover {
+            border-color: rgba(16,185,129,0.4);
+            background: rgba(16,185,129,0.05);
+            transform: translateY(-3px);
+        }
+        .supervisor-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            flex-shrink: 0;
+            border: 2px solid var(--primary);
+        }
+        .supervisor-info h3 { margin: 0 0 4px; font-size: 1.1rem; }
+        .supervisor-info .title { color: var(--primary); font-size: 0.85rem; font-weight: 600; margin: 0 0 8px; }
+        .supervisor-info p { font-size: 0.88rem; color: #94a3b8; margin: 0; line-height: 1.6; }
+
+        /* ── Team Member Cards ────────────────────────────────────── */
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 20px;
+        }
+        .team-card {
+            padding: 24px;
+            border-radius: var(--radius-md);
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            text-align: center;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .team-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transform: scaleX(0);
+            transition: transform 0.3s;
+        }
+        .team-card:hover { border-color: rgba(16,185,129,0.3); transform: translateY(-4px); }
+        .team-card:hover::before { transform: scaleX(1); }
+        .team-icon {
+            width: 72px; height: 72px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem; margin: 0 auto 14px;
+        }
+        .team-card h4 { font-size: 1rem; margin: 0 0 6px; }
+        .team-card .role { color: var(--primary); font-size: 0.8rem; font-weight: 600; margin: 0 0 10px; display: block; }
+        .team-card p { font-size: 0.83rem; color: #94a3b8; margin: 0; line-height: 1.6; }
+
+        /* ── Faculty badge ────────────────────────────────────────── */
+        .faculty-banner {
+            text-align: center;
+            padding: 32px;
+            background: linear-gradient(135deg, rgba(16,185,129,0.1) 0%, rgba(59,130,246,0.1) 100%);
+            border: 1px solid rgba(16,185,129,0.25);
+            border-radius: var(--radius-md);
+            margin-bottom: 48px;
+        }
+        .faculty-banner h2 { font-size: 1.5rem; margin: 12px 0 6px; }
+        .faculty-banner p  { color: #94a3b8; font-size: 0.92rem; margin: 0; }
+    </style>
 </head>
 <body>
-    <!-- Global Navigation -->
-    <nav class="navbar">
-        <a href="index.html" class="logo">
+
+<!-- Navbar -->
+<nav class="navbar">
+    <a href="index.html" class="logo">
         <img src="assets/logo.png" alt="Smart Waste Logo">
     </a>
-        <button class="menu-toggle">☰</button>
-        <ul class="nav-links">
-            <li><a href="index.html">Home</a></li>
-            <li><a href="about.html" class="active">About</a></li>
-            <li><a href="features.html">Features</a></li>
-            <li><a href="../dashboard.html">Dashboard</a></li>
-            <li><a href="contact.html">Contact</a></li>
-            <li><a href="faq.html">FAQ</a></li>
-            <div id="authButtons" style="display:flex;align-items:center;">
-                <a href="login.html" class="btn-primary" style="padding:9px 20px;">Login / Register</a>
-            </div>
-            <div id="userInfo" style="display:none;align-items:center;gap:10px;">
-                <span id="userHandle"></span>
-                <button onclick="logout()" class="btn-secondary" style="padding:8px 16px;font-size:0.85rem;font-weight:600;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:white;cursor:pointer;">Logout</button>
-            </div>
-        </ul>
-    </nav>
+    <button class="menu-toggle">☰</button>
+    <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html" class="active">About</a></li>
+        <li><a href="features.html">Features</a></li>
+        <li><a href="../dashboard.html">Dashboard</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <div id="authButtons" style="display:flex;align-items:center;">
+            <a href="login.html" class="btn-primary" style="padding:9px 20px;">Login / Register</a>
+        </div>
+        <div id="userInfo" style="display:none;align-items:center;gap:10px;">
+            <span id="userHandle"></span>
+            <button onclick="logout()" class="btn-secondary" style="padding:8px 16px;font-size:0.85rem;font-weight:600;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:white;cursor:pointer;">Logout</button>
+        </div>
+    </ul>
+</nav>
 
-    <!-- Header -->
-    <header class="section text-center" style="padding-top: 150px; padding-bottom: 60px;">
-        <div class="container animate">
-            <span class="badge collected" style="margin-bottom: 15px; display: inline-block;">Our Story</span>
-            <h1 style="font-size: 3rem; font-weight: 800; margin-bottom: 20px;">Pioneering Smart Cities</h1>
-            <p style="font-size: 1.1rem; max-width: 700px; margin: 0 auto;">We believe that the foundation of a modern smart city begins with sustainable, efficient, and community-driven waste management.</p>
-        </div>
-    </header>
+<!-- Hero -->
+<header class="section text-center" style="padding-top:150px; padding-bottom:60px;">
+    <div class="container animate">
+        <span class="badge badge-primary" style="margin-bottom:15px; display:inline-block;">Faculty of Business / BIS</span>
+        <h1 style="font-size:3rem; font-weight:800; margin-bottom:20px;">Meet the Team Behind<br><span class="gradient-text">SmartWaste Platform</span></h1>
+        <p style="font-size:1.1rem; max-width:650px; margin:0 auto;">
+            A passionate academic team from the Faculty of Business — Business Information Systems,
+            united by one mission: building a smarter, greener city through technology.
+        </p>
+    </div>
+</header>
 
-    <!-- Mission and Vision -->
-    <section class="section container">
-        <div class="grid-2 reveal">
-            <div class="glass-card">
-                <h2 style="color: var(--primary); margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">🌟 Our Mission</h2>
-                <p>Improve urban waste management using advanced technology, empowering municipalities to optimize routes, reduce costs, and ultimately better serve their communities.</p>
-            </div>
-            <div class="glass-card">
-                <h2 style="color: var(--primary); margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">👁️ Our Vision</h2>
-                <p>Envisioning smart, sustainable cities powered by data where citizen engagement and environmental responsibility go hand-in-hand to eliminate urban waste issues.</p>
-            </div>
-        </div>
-    </section>
+<div class="container" style="padding-bottom:80px;">
 
-    <!-- System Architecture Simple Diagram -->
-    <section class="section container">
-        <div class="text-center reveal" style="margin-bottom: 50px;">
-            <h2>System Architecture</h2>
-            <p>How the SmartWaste platform connects citizens, drivers, and administrators.</p>
-        </div>
-        <div class="glass-card reveal text-center" style="padding: 50px 20px;">
-            <div class="grid-3" style="align-items: center; gap: 20px;">
-                <div style="padding: 20px; border: 1px dashed var(--primary); border-radius: 12px; background: rgba(16, 185, 129, 0.05);">
-                    <h3 style="color: var(--primary); margin-bottom: 10px;">1. Citizens</h3>
-                    <p style="font-size: 0.9rem;">Report issues, earn eco-points, and view neighborhood stats.</p>
-                </div>
-                <!-- Desktop arrow (hidden on mobile via CSS if needed, but flex wrap handles it somewhat) -->
-                <div style="font-size: 2rem; color: var(--text-muted);">➜</div>
-                <div style="padding: 20px; border: 1px dashed var(--secondary); border-radius: 12px; background: rgba(59, 130, 246, 0.05);">
-                    <h3 style="color: var(--secondary); margin-bottom: 10px;">2. Cloud Dashboard</h3>
-                    <p style="font-size: 0.9rem;">Admins monitor real-time data and system automatically optimizes routes.</p>
-                </div>
-                <div style="font-size: 2rem; color: var(--text-muted); display: none;">➜</div>
-                <div style="padding: 20px; border: 1px dashed var(--accent); border-radius: 12px; background: rgba(245, 158, 11, 0.05);">
-                    <h3 style="color: var(--accent); margin-bottom: 10px;">3. Drivers</h3>
-                    <p style="font-size: 0.9rem;">Receive optimized tasks and update collection status instantly via mobile app.</p>
-                </div>
-            </div>
-        </div>
-    </section>
+    <!-- Faculty Banner -->
+    <div class="faculty-banner reveal">
+        <div style="font-size:2.5rem;">🏛️</div>
+        <h2>Faculty of Business / BIS</h2>
+        <p>Business Information Systems — Applying technology to solve real-world urban challenges.</p>
+    </div>
 
-    <!-- Team Section -->
-    <section class="section container text-center">
-        <div class="reveal" style="margin-bottom: 50px;">
-            <h2>Meet the Innovation Team</h2>
-            <p>Passionate engineers and urban planners dedicated to building a greener future.</p>
-        </div>
-        <div class="grid-3 reveal">
-            <div class="glass-card" style="padding: 20px;">
-                <div style="width: 80px; height: 80px; background: var(--primary); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 2rem;">👤</div>
-                <h4 style="margin-bottom: 5px;">Huda</h4>
-                <p style="font-size: 0.85rem; color: var(--primary);">CEO &amp; Founder</p>
-            </div>
-            <div class="glass-card" style="padding: 20px;">
-                <div style="width: 80px; height: 80px; background: var(--secondary); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 2rem;">👩‍💻</div>
-                <h4 style="margin-bottom: 5px;">Eman</h4>
-                <p style="font-size: 0.85rem; color: var(--secondary);">Lead Developer</p>
-            </div>
-            <div class="glass-card" style="padding: 20px;">
-                <div style="width: 80px; height: 80px; background: var(--accent); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 2rem;">🧑‍🎨</div>
-                <h4 style="margin-bottom: 5px;">Christine</h4>
-                <p style="font-size: 0.85rem; color: var(--accent);">UI/UX Designer</p>
-            </div>
-        </div>
-    </section>
+    <!-- ── Supervisors ───────────────────────────────────────── -->
+    <div class="text-center reveal" style="margin-bottom:36px;">
+        <span class="badge badge-primary" style="display:inline-block;margin-bottom:12px;">Academic Supervisors</span>
+        <h2>Project Supervisors</h2>
+        <p style="max-width:540px;margin:0 auto;">The brilliant academic minds who guided and mentored our team throughout this project.</p>
+    </div>
 
-    <!-- Global Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-top">
-                <div class="footer-col" style="grid-column: span 2 / auto;">
-                    <a href="index.html" class="logo">
-        <img src="assets/logo.png" alt="Smart Waste Logo">
-    </a>
-                    <p style="max-width: 300px;">Transforming urban living with sustainable, data-driven waste management systems.</p>
-                </div>
-                <div class="footer-col">
-                    <h4>Platform</h4>
-                    <ul>
-                        <li><a href="index.html">Home</a></li>
-                        <li><a href="about.html">About Us</a></li>
-                        <li><a href="features.html">Features</a></li>
-                        <li><a href="dashboard.html">Dashboard</a></li>
-                    </ul>
-                </div>
-                <div class="footer-col">
-                    <h4>Support</h4>
-                    <ul>
-                        <li><a href="contact.html">Contact Us</a></li>
-                        <li><a href="faq.html">FAQ</a></li>
-                        <li><a href="privacy.html">Privacy Policy</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2026 SmartWaste System. All rights reserved.</p>
+    <div class="grid-2 reveal" style="margin-bottom:64px;">
+
+        <!-- Dr. Mohamed Elmasry -->
+        <div class="supervisor-card">
+            <div class="supervisor-avatar" style="background:rgba(16,185,129,0.1);">🎓</div>
+            <div class="supervisor-info">
+                <h3>Dr. Mohamed Elmasry</h3>
+                <p class="title">Project Academic Supervisor</p>
+                <p>Provided strategic direction and academic oversight for the SmartWaste project. Dr. Elmasry guided the team in applying Business Information Systems principles to design a scalable, real-world waste management solution.</p>
             </div>
         </div>
-    </footer>
 
-    <script src="../js/app.js"></script>
+        <!-- Dr. Ganna Mohamed -->
+        <div class="supervisor-card">
+            <div class="supervisor-avatar" style="background:rgba(59,130,246,0.1);">👩‍🏫</div>
+            <div class="supervisor-info">
+                <h3>Dr. Ganna Mohamed</h3>
+                <p class="title">Technical & Research Advisor</p>
+                <p>Offered expert guidance on data modeling, system architecture, and research methodology. Dr. Ganna ensured the platform met rigorous academic and technical standards throughout development.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── Project Team ──────────────────────────────────────── -->
+    <div class="text-center reveal" style="margin-bottom:36px;">
+        <span class="badge badge-primary" style="display:inline-block;margin-bottom:12px;">The Builders</span>
+        <h2>Project Team</h2>
+        <p style="max-width:540px;margin:0 auto;">Nine dedicated team members who designed, developed, and deployed every feature of this platform.</p>
+    </div>
+
+    <div class="team-grid reveal">
+
+        <!-- Hoda Samy Mohamed -->
+        <div class="team-card">
+            <div class="team-icon" style="background:rgba(16,185,129,0.12);">👩‍💼</div>
+            <h4>Hoda Samy Mohamed</h4>
+            <span class="role">Project Manager & Team Lead</span>
+            <p>Led the full project lifecycle, coordinated team workflows, and ensured on-time delivery of all milestones for the SmartWaste platform.</p>
+        </div>
+
+        <!-- Mohamed Ahmed Samy -->
+        <div class="team-card">
+            <div class="team-icon" style="background:rgba(59,130,246,0.12);">👨‍💻</div>
+            <h4>Mohamed Ahmed Samy</h4>
+            <span class="role">Full Stack Developer</span>
+            <p>Built the core backend API using Node.js & Express, and developed key frontend pages including the citizen reporting system.</p>
+        </div>
+
+        <!-- Mariam Hamada Ahmed -->
+        <div class="team-card">
+            <div class="team-icon" style="background:rgba(168,85,247,0.12);">👩‍🎨</div>
+            <h4>Mariam Hamada Ahmed</h4>
+            <span class="role">UI/UX Designer</span>
+            <p>Designed the visual identity, user interface mockups, and the complete design system used across all pages of the platform.</p>
+        </div>
+
+        <!-- Mohamed Youssef Mohamed -->
+        <div class="team-card">
+            <div class="team-icon" style="background:rgba(245,158,11,0.12);">🗄️</div>
+            <h4>Mohamed Youssef Mohamed</h4>
+            <span class="role">Database Engineer</span>
+            <p>Designed the MongoDB database schema, implemented Mongoose models, and optimized all data queries for performance and reliability.</p>
+        </div>
+
+        <!-- Ahmed Omar Ahmed -->
+        <div class="team-card">
+            <div class="team-icon" style="background:rgba(16,185,129,0.12);">🚀</div>
+            <h4>Ahmed Omar Ahmed</h4>
+            <span class="role">DevOps & Deployment Engineer</span>
+            <p>Managed the deployment pipeline on Vercel, configured environment variables, and ensured continuous integration with GitHub.</p>
+        </div>
+
+        <!-- Pierre Emad Aziz -->
+        <div class="team-card">
+            <div class="team-icon" style="background:rgba(20,184,166,0.12);">🗺️</div>
+            <h4>Pierre Emad Aziz</h4>
+            <span class="role">Maps & Geolocation Developer</span>
+            <p>Integrated Leaflet.js interactive maps, GPS geolocation features, and the real-time waste report location system in the admin dashboard.</p>
+        </div>
+
+        <!-- Eman Khaled Mohamed -->
+        <div class="team-card">
+            <div class="team-icon" style="background:rgba(236,72,153,0.12);">📊</div>
+            <h4>Eman Khaled Mohamed</h4>
+            <span class="role">Data Analyst & Charts Developer</span>
+            <p>Implemented all analytics charts using Chart.js, including the waste composition doughnut chart, trend analysis, and collection efficiency gauges.</p>
+        </div>
+
+        <!-- Christine Emad Attia -->
+        <div class="team-card">
+            <div class="team-icon" style="background:rgba(245,158,11,0.12);">🔐</div>
+            <h4>Christine Emad Attia</h4>
+            <span class="role">Security & Authentication Engineer</span>
+            <p>Implemented JWT-based authentication, role-based access control (RBAC), and secure API middleware for the platform.</p>
+        </div>
+
+        <!-- Ahmed Mohamed Nabil Afifi -->
+        <div class="team-card">
+            <div class="team-icon" style="background:rgba(59,130,246,0.12);">📝</div>
+            <h4>Ahmed Mohamed Nabil Afifi</h4>
+            <span class="role">Documentation & Testing Lead</span>
+            <p>Wrote technical documentation, conducted system testing across all user roles, and prepared the final project presentation and report.</p>
+        </div>
+
+    </div>
+
+    <!-- ── Mission & Vision ──────────────────────────────────── -->
+    <div class="grid-2 reveal" style="margin-top:64px;">
+        <div class="glass-card">
+            <h2 style="color:var(--primary);margin-bottom:15px;display:flex;align-items:center;gap:10px;">🌟 Our Mission</h2>
+            <p>Improve urban waste management using advanced technology, empowering municipalities to optimize routes, reduce costs, and ultimately better serve their communities.</p>
+        </div>
+        <div class="glass-card">
+            <h2 style="color:var(--primary);margin-bottom:15px;display:flex;align-items:center;gap:10px;">👁️ Our Vision</h2>
+            <p>Envisioning smart, sustainable cities powered by data where citizen engagement and environmental responsibility go hand-in-hand to eliminate urban waste issues.</p>
+        </div>
+    </div>
+
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <div class="logo" style="margin-bottom:16px; justify-content:flex-start;">
+                    <img src="assets/logo.png" alt="Smart Waste Logo" style="height:40px; object-fit:contain;">
+                </div>
+                <p>Faculty of Business / BIS — Smart Waste Management System.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Platform</h4>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="about.html">About Us</a></li>
+                    <li><a href="features.html">Features</a></li>
+                    <li><a href="contact.html">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2026 SmartWaste Platform — Faculty of Business / BIS. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<script src="../js/app.js"></script>
 <script src="../js/chatbot.js"></script>
 </body>
 </html>

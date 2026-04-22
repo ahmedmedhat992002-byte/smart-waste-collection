@@ -152,15 +152,35 @@ function logout() {
 }
 
 // ── Public Stats ──────────────────────────────────────────────────────────────
+function animateCounter(el) {
+    const target   = +el.getAttribute('data-target') || 0;
+    const duration = 1400;
+    const start    = Date.now();
+    const tick = () => {
+        const elapsed  = Date.now() - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased    = 1 - Math.pow(1 - progress, 3);
+        el.textContent = Math.floor(eased * target).toLocaleString();
+        if (progress < 1) requestAnimationFrame(tick);
+        else el.textContent = target.toLocaleString();
+    };
+    requestAnimationFrame(tick);
+}
+
 async function initPublicStats() {
     try {
         const res  = await fetch(`${API_URL}/public-stats`);
         if (!res.ok) return;
         const data = await res.json();
         const counters = document.querySelectorAll('.counter');
-        if (counters[0]) counters[0].setAttribute('data-target', data.totalTons   || 1540);
+
+        // Update data-target with real values
+        if (counters[0]) counters[0].setAttribute('data-target', data.totalTons      || 1540);
         if (counters[1]) counters[1].setAttribute('data-target', Math.round((data.activeCitizens || 320000) / 1000));
-        if (counters[2]) counters[2].setAttribute('data-target', data.co2Reduction || 45);
+        if (counters[2]) counters[2].setAttribute('data-target', data.co2Reduction   || 45);
+
+        // Re-animate with real values (counters are already visible)
+        counters.forEach(animateCounter);
     } catch { /* server offline — use default values already in HTML */ }
 }
 
