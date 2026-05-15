@@ -4,7 +4,15 @@
    scroll reveals, counter animations, contact form, page loader.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const API_URL = '/api';
+const API_URL = (window.location.protocol === 'file:' || window.location.port === '5500') 
+    ? 'http://localhost:5000/api' 
+    : '/api';
+
+// Protocol check warning
+if (window.location.protocol === 'file:') {
+    console.error('⚠️ SmartWaste: You are opening the HTML file directly. API requests will target http://localhost:5000/api');
+}
+
 
 
 // ── Splash Screen (first visit only) ─────────────────────────────────────────
@@ -263,11 +271,14 @@ async function login(email, password) {
             window.location.href = '/frontend/index.html';
         }
         return true;
-    } catch {
-        showToast('Cannot reach server. Is it running on port 5000?', 'error');
+    } catch (err) {
+        console.error('Login Fetch Error:', err);
+        const detail = window.location.protocol === 'file:' ? ' (Using file:// protocol)' : '';
+        showToast('Cannot reach server. Is it running on port 5000?' + detail, 'error');
         return false;
     }
 }
+
 
 // ── Logout ────────────────────────────────────────────────────────────────────
 function logout() {

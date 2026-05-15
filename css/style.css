@@ -198,7 +198,7 @@ a  { text-decoration: none; color: inherit; transition: var(--transition); }
     transform: translateY(2px); /* Slight optical baseline adjustment */
 }
 .logo img {
-    height: 48px; /* Slightly larger for better definition */
+    height: 90px; /* Slightly larger for better definition */
     object-fit: contain;
     transition: 0.3s ease;
     display: block;
@@ -208,7 +208,7 @@ a  { text-decoration: none; color: inherit; transition: var(--transition); }
 }
 @media (max-width: 768px) {
     .navbar .logo { transform: translateY(0); }
-    .logo img { height: 38px; }
+    .logo img { height: 70px; }
 }
 
 .nav-links {
