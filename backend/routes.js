@@ -16,8 +16,8 @@ const BASE_URL = process.env.VERCEL_URL
 const UPLOAD_DIR = process.env.VERCEL ? '/tmp/uploads' : './uploads';
 const USER_DATA_FILE = './users.json';
 
-const DEMO_EMAILS = ['admin@smartwaste.ai', 'driver1@fleet.com'];
-const DEMO_IDS    = ['demo_admin', 'demo_driver'];
+const DEMO_EMAILS = ['admin@smartwaste.ai', 'driver1@fleet.com', 'citizen1@smartwaste.ai'];
+const DEMO_IDS    = ['demo_admin', 'demo_driver', 'demo_citizen'];
 
 const isDemo = (req) =>
     DEMO_EMAILS.includes(req.user?.email) || DEMO_IDS.includes(req.user?.id);
@@ -214,6 +214,14 @@ router.post(['/auth/login', '/login'], async (req, res) => {
                 role: 'driver',
                 ecoPoints: 2500,
                 status: 'available'
+            },
+            'citizen1@smartwaste.ai': {
+                _id: 'demo_citizen',
+                name: 'Sarah Citizen',
+                email: 'citizen1@smartwaste.ai',
+                role: 'citizen',
+                ecoPoints: 320,
+                status: 'active'
             }
         };
 
@@ -488,6 +496,15 @@ router.get('/admin/stats', authMiddleware, adminOnly, async (req, res) => {
                 { _id: '1', category: 'Plastics', status: 'pending',    location: { address: 'Tahrir Square' }, reporterName: 'Ahmed M.',  createdAt: '2h ago' },
                 { _id: '2', category: 'Organic',  status: 'dispatched', location: { address: 'Nasr City'    }, reporterName: 'Fatma A.',  createdAt: '4h ago' },
                 { _id: '3', category: 'Metal',    status: 'collected',  location: { address: 'Maadi'        }, reporterName: 'Omar H.',   createdAt: '6h ago' }
+            ],
+            reports: [
+                { _id: 'report1', category: 'Plastics', status: 'pending',    location: { lat: 30.0444, lng: 31.2357, address: 'Tahrir Square, Downtown Cairo' }, reporterName: 'Ahmed Mohamed', createdAt: new Date().toISOString() },
+                { _id: 'report2', category: 'Organic',  status: 'dispatched', location: { lat: 30.0625, lng: 31.2490, address: 'Nasr City Market' }, reporterName: 'Fatma Ali', createdAt: new Date().toISOString() },
+                { _id: 'report3', category: 'Metal',    status: 'collected',  location: { lat: 30.0131, lng: 31.2089, address: 'Maadi - 26th July Street' }, reporterName: 'Omar Hassan', createdAt: new Date().toISOString() },
+                { _id: 'report4', category: 'Glass',    status: 'pending',    location: { lat: 30.0658, lng: 31.2184, address: 'Zamalek Island' }, reporterName: 'Aisha Karim', createdAt: new Date().toISOString() },
+                { _id: 'report5', category: 'E-Waste',  status: 'dispatched', location: { lat: 30.1208, lng: 31.3186, address: 'Heliopolis Tech Park' }, reporterName: 'Tech Corp', createdAt: new Date().toISOString() },
+                { _id: 'report6', category: 'Hazardous', status: 'pending',   location: { lat: 30.0433, lng: 31.2017, address: 'Dokki University Area' }, reporterName: 'Prof. Salem', createdAt: new Date().toISOString() },
+                { _id: 'report7', category: 'Organic',  status: 'collected',  location: { lat: 30.0550, lng: 31.1986, address: 'Mohandessin - Sudan Street' }, reporterName: 'Layla Ahmed', createdAt: new Date().toISOString() }
             ]
         });
     }
@@ -512,6 +529,12 @@ router.get('/admin/stats', authMiddleware, adminOnly, async (req, res) => {
             .populate('user', 'name')
             .lean();
 
+        const allReports = await models.Report.find().populate('user', 'name').lean();
+        const reportsMapped = allReports.map(r => ({
+            ...r,
+            reporterName: r.user?.name || 'Unknown'
+        }));
+
         res.json({
             totalUsers, totalReports, pendingAction, dispatched, collected,
             activeDrivers: await models.User.countDocuments({ role: 'driver', status: { $in: ['available', 'busy'] } }),
@@ -521,7 +544,8 @@ router.get('/admin/stats', authMiddleware, adminOnly, async (req, res) => {
             recentReports: recentReports.map(r => ({
                 ...r,
                 reporterName: r.user?.name || 'Unknown'
-            }))
+            })),
+            reports: reportsMapped
         });
     } catch (error) {
         console.error('Admin stats error:', error.message);
@@ -786,24 +810,66 @@ router.get('/admin/efficiency-history', authMiddleware, adminOnly, (req, res) =>
 });
 
 router.get('/admin/export-csv', authMiddleware, adminOnly, async (req, res) => {
+    const { status, type } = req.query;
+
     if (isDemo(req)) {
+        if (type === 'fleet') {
+            const csvContent = [
+                'Driver ID,Name,Email,Status,Eco Points,Created\n',
+                'demo_driver,Driver One,driver1@fleet.com,available,2500,2023-02-15\n',
+                'driver2,Salem Karim,driver2@fleet.com,busy,1800,2023-11-20\n',
+                'driver3,Nadia Salem,driver3@fleet.com,offline,0,2023-12-10\n'
+            ].join('');
+            res.header('Content-Type', 'text/csv');
+            res.attachment(`smartwaste-fleet-demo-${new Date().toISOString().slice(0, 10)}.csv`);
+            return res.send(csvContent);
+        }
+
+        const demoReports = [
+            { id: '64f8a1b2c3d4e5f6789abcd0', category: 'Plastics', status: 'pending', address: 'Tahrir Square, Cairo', reporter: 'Ahmed Mohamed', driver: '', created: '2024-01-15 10:30' },
+            { id: '64f8a1b2c3d4e5f6789abcd1', category: 'Organic', status: 'dispatched', address: 'Nasr City', reporter: 'Fatma Ali', driver: 'Driver One', created: '2024-01-15 09:15' },
+            { id: '64f8a1b2c3d4e5f6789abcd2', category: 'Metal', status: 'collected', address: 'Maadi', reporter: 'Omar Hassan', driver: 'Driver One', created: '2024-01-15 08:45' },
+            { id: '64f8a1b2c3d4e5f6789abcd3', category: 'Glass', status: 'pending', address: 'Zamalek', reporter: 'Aisha Karim', driver: '', created: '2024-01-15 07:20' },
+            { id: '64f8a1b2c3d4e5f6789abcd4', category: 'E-Waste', status: 'dispatched', address: 'Heliopolis', reporter: 'Tech Corp', driver: 'Nadia Salem', created: '2024-01-15 11:00' }
+        ];
+
+        let filtered = demoReports;
+        if (status && status !== 'all') {
+            filtered = demoReports.filter(r => r.status === status);
+        }
+
         const csvContent = [
-            'Report ID,Category,Status,Location,Reporter,Driver,Created,Completed\n',
-            '64f8a1b2c3d4e5f6789abcd0,Plastics,pending,"Tahrir Square, Cairo",Ahmed Mohamed,,2024-01-15 10:30,\n',
-            '64f8a1b2c3d4e5f6789abcd1,Organic,dispatched,"Nasr City",Fatma Ali,Driver One,2024-01-15 09:15,2024-01-15 12:45\n',
-            '64f8a1b2c3d4e5f6789abcd2,Metal,collected,"Maadi",Omar Hassan,Driver One,2024-01-15 08:45,2024-01-15 11:30\n',
-            '64f8a1b2c3d4e5f6789abcd3,Glass,pending,"Zamalek",Aisha Karim,,2024-01-15 07:20,\n',
-            '64f8a1b2c3d4e5f6789abcd4,E-Waste,dispatched,"Heliopolis",Tech Corp,Nadia Salem,2024-01-15 11:00,2024-01-15 14:20\n'
+            'Report ID,Category,Status,Location,Reporter,Driver,Created\n',
+            ...filtered.map(r => `${r.id},${r.category},${r.status},"${r.address}",${r.reporter},${r.driver || ''},${r.created}\n`)
         ].join('');
+
         res.header('Content-Type', 'text/csv');
-        res.attachment(`smartwaste-demo-${new Date().toISOString().slice(0, 10)}.csv`);
+        res.attachment(`smartwaste-reports-demo-${status || 'all'}-${new Date().toISOString().slice(0, 10)}.csv`);
         return res.send(csvContent);
     }
 
     try {
         const models = getModels();
         if (!models) return res.status(503).json({ error: 'Database unavailable' });
-        const reports = await models.Report.find()
+
+        if (type === 'fleet') {
+            const drivers = await models.User.find({ role: 'driver' }).lean();
+            const rows = [
+                'Driver ID,Name,Email,Status,Eco Points,Created\n',
+                ...drivers.map(d => `${d._id},${d.name},${d.email},${d.status || 'active'},${d.ecoPoints || 0},${new Date(d.createdAt).toISOString()}\n`)
+            ].join('');
+
+            res.header('Content-Type', 'text/csv');
+            res.attachment(`smartwaste-fleet-${new Date().toISOString().slice(0, 10)}.csv`);
+            return res.send(rows);
+        }
+
+        const filter = {};
+        if (status && status !== 'all') {
+            filter.status = status;
+        }
+
+        const reports = await models.Report.find(filter)
             .populate('user', 'name')
             .populate('assignedTo', 'name')
             .lean();
@@ -816,7 +882,7 @@ router.get('/admin/export-csv', authMiddleware, adminOnly, async (req, res) => {
         ].join('');
 
         res.header('Content-Type', 'text/csv');
-        res.attachment(`smartwaste-reports-${new Date().toISOString().slice(0, 10)}.csv`);
+        res.attachment(`smartwaste-reports-${status || 'all'}-${new Date().toISOString().slice(0, 10)}.csv`);
         res.send(rows);
     } catch (error) {
         res.status(500).json({ error: 'Export failed' });

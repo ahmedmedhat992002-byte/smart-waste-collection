@@ -399,6 +399,7 @@ textarea.form-control { resize: vertical; min-height: 130px; line-height: 1.6; }
     border-radius: var(--radius-lg); padding: 22px 24px;
     transition: var(--transition);
     position: relative; overflow: hidden;
+    cursor: pointer;
 }
 .stat-card::after {
     content: ''; position: absolute; top: 0; right: 0;

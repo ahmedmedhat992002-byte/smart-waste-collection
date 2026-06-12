@@ -195,25 +195,25 @@
 
         <!-- KPI Cards -->
         <div class="kpi-grid">
-            <div class="stat-card blue">
+            <div class="stat-card blue" onclick="clickKpiCard('reports', 'all')">
                 <div class="stat-icon blue"><i class="fas fa-trash-can"></i></div>
                 <div class="stat-label">Total Reports</div>
                 <div class="stat-value" id="statTotal">—</div>
                 <div class="stat-sub">All time</div>
             </div>
-            <div class="stat-card amber">
+            <div class="stat-card amber" onclick="clickKpiCard('reports', 'pending')">
                 <div class="stat-icon amber"><i class="fas fa-clock"></i></div>
                 <div class="stat-label">Pending Action</div>
                 <div class="stat-value" id="statPending">—</div>
                 <div class="stat-sub">Awaiting dispatch</div>
             </div>
-            <div class="stat-card green">
+            <div class="stat-card green" onclick="clickKpiCard('users', 'all', 'fleet')">
                 <div class="stat-icon green"><i class="fas fa-truck-fast"></i></div>
                 <div class="stat-label">Active Fleet</div>
                 <div class="stat-value" id="statFleet">—</div>
                 <div class="stat-sub" id="statFleetUtil">0% utilization</div>
             </div>
-            <div class="stat-card purple">
+            <div class="stat-card purple" onclick="clickKpiCard('reports', 'collected')">
                 <div class="stat-icon purple"><i class="fas fa-circle-check"></i></div>
                 <div class="stat-label">Collection Rate</div>
                 <div class="stat-value" id="statCollected">—</div>
@@ -276,13 +276,13 @@
             <div class="section-heading" style="margin-bottom:12px;">
                 <h3>Waste Report Locations</h3>
                 <div style="display:flex;gap:16px;flex-wrap:wrap;">
-                    <span style="font-size:0.8rem;display:flex;align-items:center;gap:5px;">
+                    <span class="map-filter" data-status="pending" onclick="filterMapMarkers('pending')" style="font-size:0.8rem;display:flex;align-items:center;gap:5px;cursor:pointer;opacity:1;transition:all 0.2s;">
                         <span style="width:10px;height:10px;background:#f59e0b;border-radius:50%;display:inline-block;"></span> Pending
                     </span>
-                    <span style="font-size:0.8rem;display:flex;align-items:center;gap:5px;">
+                    <span class="map-filter" data-status="dispatched" onclick="filterMapMarkers('dispatched')" style="font-size:0.8rem;display:flex;align-items:center;gap:5px;cursor:pointer;opacity:1;transition:all 0.2s;">
                         <span style="width:10px;height:10px;background:#86efac;border-radius:50%;display:inline-block;"></span> Dispatched
                     </span>
-                    <span style="font-size:0.8rem;display:flex;align-items:center;gap:5px;">
+                    <span class="map-filter" data-status="collected" onclick="filterMapMarkers('collected')" style="font-size:0.8rem;display:flex;align-items:center;gap:5px;cursor:pointer;opacity:1;transition:all 0.2s;">
                         <span style="width:10px;height:10px;background:#10b981;border-radius:50%;display:inline-block;"></span> Collected
                     </span>
                 </div>

@@ -22,6 +22,13 @@ async function initAdminDashboard() {
     await fetchStats();
     await fetchDrivers();
     loadNotificationBadge();
+
+    // Notification bell click behavior
+    document.getElementById('notifBtn')?.addEventListener('click', () => {
+        clickKpiCard('reports', 'pending');
+        const dot = document.getElementById('notifDot');
+        if (dot) dot.classList.remove('show');
+    });
     
     // Dynamic Simulation Polling
     setInterval(() => {
@@ -239,6 +246,8 @@ async function initAdminMap() {
     else await fetchStats(); // triggers renderMapMarkers when data arrives
 }
 
+window.mapStatusFilter = 'all';
+
 function renderMapMarkers(reports) {
     if (!window.adminMap) return;
     if (window.markerLayer) window.markerLayer.clearLayers();
@@ -251,7 +260,11 @@ function renderMapMarkers(reports) {
         }).addTo(window.adminMap);
     }
 
-    reports.forEach(r => {
+    const filtered = window.mapStatusFilter === 'all'
+        ? reports
+        : reports.filter(r => r.status === window.mapStatusFilter);
+
+    filtered.forEach(r => {
         if (!r.location?.lat) return;
         const color = STATUS_COLORS[r.status] || '#64748b';
         const icon  = L.divIcon({
@@ -269,6 +282,32 @@ function renderMapMarkers(reports) {
         `);
         window.markerLayer.addLayer(marker);
     });
+}
+
+function filterMapMarkers(status) {
+    if (window.mapStatusFilter === status) {
+        window.mapStatusFilter = 'all';
+    } else {
+        window.mapStatusFilter = status;
+    }
+    console.log("Filtering map markers by status:", window.mapStatusFilter);
+
+    document.querySelectorAll('.map-filter').forEach(el => {
+        const s = el.getAttribute('data-status');
+        if (s === window.mapStatusFilter) {
+            el.style.opacity = '1';
+            el.style.fontWeight = '700';
+            el.style.textDecoration = 'underline';
+        } else {
+            el.style.opacity = '0.6';
+            el.style.fontWeight = 'normal';
+            el.style.textDecoration = 'none';
+        }
+    });
+
+    if (window.latestReports) {
+        renderMapMarkers(window.latestReports);
+    }
 }
 
 // ── Reports Table ─────────────────────────────────────────────────────────────
@@ -367,12 +406,18 @@ async function fetchAllUsers() {
     } catch { showToast('Failed to load users', 'error'); }
 }
 
-function filterUsers() {
+function filterUsers(role = 'all') {
     const q = document.getElementById('userSearchInput')?.value.toLowerCase() || '';
     if (!window.allUsersCache) return;
-    const filtered = window.allUsersCache.filter(u =>
-        u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
-    );
+    let filtered = window.allUsersCache;
+    if (role && role !== 'all') {
+        filtered = filtered.filter(u => u.role === role);
+    }
+    if (q) {
+        filtered = filtered.filter(u =>
+            u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+        );
+    }
     renderUsers(filtered);
 }
 
@@ -490,10 +535,10 @@ async function loadNotificationBadge() {
 }
 
 // ── CSV Export ────────────────────────────────────────────────────────────────
-async function exportCSV() {
+async function exportCSV(status = 'all', type = 'reports') {
     try {
         const token = localStorage.getItem('token');
-        const res   = await fetch(`${API_URL}/admin/export-csv`, {
+        const res   = await fetch(`${API_URL}/admin/export-csv?status=${status}&type=${type}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
@@ -501,11 +546,34 @@ async function exportCSV() {
             const url  = URL.createObjectURL(blob);
             const a    = document.createElement('a');
             a.href     = url;
-            a.download = `smartwaste_${new Date().toISOString().slice(0,10)}.csv`;
+            a.download = `smartwaste_${type}_${status}_${new Date().toISOString().slice(0,10)}.csv`;
             document.body.appendChild(a); a.click(); a.remove();
-            showToast('Report exported successfully!', 'success');
+            showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} (${status}) exported successfully!`, 'success');
         } else {
             showToast('Export failed', 'error');
         }
     } catch { showToast('Connection error', 'error'); }
+}
+
+// ── KPI Card Click Action ──────────────────────────────────────────────────────
+function clickKpiCard(tabId, status = 'all', type = 'reports') {
+    // 1. Switch to tab
+    const navLink = document.querySelector(`.nav-link[data-tab="${tabId}"]`);
+    switchTab(tabId, navLink);
+    
+    // 2. Filter data in the UI
+    if (tabId === 'reports') {
+        filterReports(status);
+    } else if (tabId === 'users') {
+        const searchInput = document.getElementById('userSearchInput');
+        if (searchInput) searchInput.value = '';
+        if (type === 'fleet') {
+            filterUsers('driver');
+        } else {
+            filterUsers('all');
+        }
+    }
+    
+    // 3. Trigger CSV export
+    exportCSV(status, type);
 }

@@ -84,17 +84,9 @@
 
         <!-- Login Form -->
         <form id="loginForm" class="auth-form active" novalidate>
-            <div class="demo-creds">
-                <p>
-                    <strong>Demo Admin:</strong> admin@smartwaste.ai<br>
-                    <strong>Demo Driver:</strong> driver1@fleet.com<br>
-                    <strong>Password (all):</strong> password
-                </p>
-            </div>
-
             <div class="form-group">
                 <label for="loginEmail">Email Address</label>
-                <input type="email" id="loginEmail" class="form-control" placeholder="admin@smartwaste.ai" required autocomplete="email">
+                <input type="email" id="loginEmail" class="form-control" placeholder="you@example.com" required autocomplete="email">
                 <div class="form-error" id="loginEmailErr">Enter a valid email</div>
             </div>
             <div class="form-group">
@@ -109,12 +101,15 @@
             <button type="submit" class="btn-primary btn-full" id="loginBtn" style="margin-top:8px;">
                 Sign In
             </button>
-            <div class="divider"><span>or use demo</span></div>
-            <button type="button" class="btn-secondary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;" onclick="demoLogin('admin')">
+            <div class="divider"><span>Quick Login</span></div>
+            <button type="button" class="btn-secondary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;" onclick="quickLogin('admin')">
                 🧑‍💼 Login as Admin
             </button>
-            <button type="button" class="btn-secondary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;margin-top:8px;" onclick="demoLogin('driver')">
+            <button type="button" class="btn-secondary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;margin-top:8px;" onclick="quickLogin('driver')">
                 🚛 Login as Driver
+            </button>
+            <button type="button" class="btn-secondary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;margin-top:8px;" onclick="quickLogin('citizen')">
+                🌍 Login as Citizen
             </button>
         </form>
 
@@ -181,10 +176,11 @@
         btn.textContent = isText ? '👁' : '🙈';
     }
 
-    function demoLogin(role) {
+    function quickLogin(role) {
         const creds = {
-            admin:  { email: 'admin@smartwaste.ai',  password: 'password' },
-            driver: { email: 'driver1@fleet.com', password: 'password' },
+            admin:   { email: 'admin@smartwaste.ai',    password: 'password' },
+            driver:  { email: 'driver1@fleet.com',      password: 'password' },
+            citizen: { email: 'citizen1@smartwaste.ai', password: 'password' }
         };
         const c = creds[role];
         document.getElementById('loginEmail').value    = c.email;
